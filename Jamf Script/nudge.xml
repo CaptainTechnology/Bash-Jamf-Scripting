@@ -1,0 +1,160 @@
+
+<!-- Application & Custom Settings -->
+<!-- Prefered domain -->
+<!-- com.github.macadmins.Nudge -->
+
+
+<!-- original link -->
+<!-- https://github.com/macadmins/nudge/blob/main/Example%20Assets/com.github.macadmins.Nudge.mobileconfig -->
+
+<!-- modified version -->
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+    <!-- OPTIONAL FEATURES -->
+    <key>optionalFeatures</key>
+    <dict>
+
+        <key>acceptableApplicationBundleIDs</key>
+        <array>
+            <string>us.zoom.xos</string>
+            <string>com.apple.iWork.Keynote</string>
+            <string>com.microsoft.Powerpoint</string>
+            <string>com.cisco.webexmeetingsapp</string>
+        </array>
+
+        <key>aggressiveUserExperience</key>
+        <false/>
+
+        <key>aggressiveUserFullScreenExperience</key>
+        <false/>
+
+        <key>asynchronousSoftwareUpdate</key>
+        <true/>
+
+        <key>attemptToFetchMajorUpgrade</key>
+        <true/>
+
+        <key>enforceMinorUpdates</key>
+        <true/>
+
+    </dict>
+
+    <!-- OS REQUIREMENTS -->
+    <key>osVersionRequirements</key>
+    <array>
+        <dict>
+
+            <!-- TARGET VERSION (UPDATE THIS PER COMPANY STANDARD) -->
+            <key>requiredMinimumOSVersion</key>
+            <string>15.7.5</string>
+
+            <!-- FINAL DEADLINE -->
+            <key>requiredInstallationDate</key>
+            <string>2026-09-01T18:00:00Z</string>
+
+            <key>aboutUpdateURL</key>
+            <string>https://support.apple.com/en-us/HT201222</string>
+
+            <!-- BUTTON ACTION -->
+            <key>actionButtonPath</key>
+            <string>x-apple.systempreferences:com.apple.Software-Update-Settings.extension</string>
+
+        </dict>
+    </array>
+
+    <!-- USER EXPERIENCE -->
+    <key>userExperience</key>
+    <dict>
+
+        <key>allowGracePeriods</key>
+        <true/>
+
+        <key>approachingRefreshCycle</key>
+        <integer>7200</integer>
+
+        <key>approachingWindowTime</key>
+        <integer>72</integer>
+
+        <key>elapsedRefreshCycle</key>
+        <integer>3600</integer>
+
+        <key>gracePeriodInstallDelay</key>
+        <integer>24</integer>
+
+        <key>gracePeriodLaunchDelay</key>
+        <integer>12</integer>
+
+        <key>imminentRefreshCycle</key>
+        <integer>900</integer>
+
+        <key>imminentWindowTime</key>
+        <integer>48</integer>
+
+        <key>initialRefreshCycle</key>
+        <integer>14400</integer>
+
+    </dict>
+
+    <!-- UI SETTINGS -->
+    <key>userInterface</key>
+    <dict>
+
+        <key>fallbackLanguage</key>
+        <string>en</string>
+
+        <key>forceFallbackLanguage</key>
+        <false/>
+
+        <!-- FIXED ICON PATHS -->
+        <key>iconDarkPath</key>
+        <string>/Library/Application Support/ACME_IT/Images/ACME-stacked-color-knockout.png</string>
+
+        <key>iconLightPath</key>
+        <string>/Library/Application Support/ACME_IT/Images/ACME-stacked-color.png</string>
+
+        <key>showDeferralCount</key>
+        <true/>
+
+        <key>singleQuitButton</key>
+        <true/>
+
+        <key>updateElements</key>
+        <array>
+            <dict>
+
+                <key>_language</key>
+                <string>en</string>
+
+                <key>mainHeader</key>
+                <string>This Mac requires a security update</string>
+
+                <key>subHeader</key>
+                <string>A friendly notice from ACME IT</string>
+
+                <key>mainContentText</key>
+                <string>
+                
+We noticed that this Mac has available software updates.
+
+Keeping macOS up to date is required to maintain security and compliance for ACME devices.
+
+Click "Update Device" to open Software Update and install the latest approved macOS version.
+
+Please save your work before proceeding, as the update will require a restart.
+
+This process typically takes 30–45 minutes.
+
+You will continue receiving reminders until the update is installed.
+                </string>
+
+            </dict>
+        </array>
+
+    </dict>
+
+</dict>
+</plist>
