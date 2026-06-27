@@ -19,3 +19,13 @@
 
 # sudo pkill jamf
 # sudo pkill -f "jamf policy" 
+
+
+
+
+# check boundle id ,
+# If you know the application name:
+osascript -e 'id of app "Safari"' 
+# If you know the application's path:
+mdls -name kMDItemCFBundleIdentifier "/Applications/Google Chrome.app" 
+# com.microsoft.wdav -> don't add "com.microsoft.wdav" in smart group

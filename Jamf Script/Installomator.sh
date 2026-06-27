@@ -1,3 +1,12 @@
+# parameter 4 will be the app name
+# for multiple application we need to add multiple script and parameter
+
+
+
+
+
+
+
 #!/bin/zsh --no-rcs
 label="" # if no label is sent to the script, this will be used
 
