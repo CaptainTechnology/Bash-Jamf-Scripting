@@ -41,10 +41,10 @@ echo "Remove suffix: ${str% World}"
 # echo
 
 # # Compare
-# a="test"
-# b="test"
-# [[ "$a" == "$b" ]] && echo "Equal: Yes" || echo "Equal: No"
-# echo
+a="test"
+b="test"
+[[ "$a" == "$b" ]] && echo "Equal: Yes" || echo "Equal: No"
+echo
 
 # # Empty check
 # empty=""

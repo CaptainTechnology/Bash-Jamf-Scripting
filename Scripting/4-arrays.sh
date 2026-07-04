@@ -1,101 +1,115 @@
 #!/bin/bash
 
 echo "===== BASH ARRAY GUIDE ====="
-echo
+# echo
+#recommnedataion use @ always insted of using *
+names=("John Doe" "Jane Smith" "Alex")
 
-# Create array
-arr=(1 2 3 "banana" "mango")
+for name in "${names[@]}"; do
+    echo "Hello, $name"
+done
+
+for name in "${names[*]}"; do # merge all elements into one long string
+    echo "Hello, $name"
+done
+
+
+# # set -e
+# # Create array
+# arr=(1 2 3 "banana" "mango")
 
 # Access
-echo "First: ${arr[0]}"
-arr=(1 2 3)
+# echo "First: ${arr[0]}"
 
-echo ${arr[2]}      # 3
-echo "${arr[2]}"    # 3 (safe - recommended)
+# arr=(1 2 3 "hello" "captian" "jack")
 
-echo $arr[2]        # 12 (WRONG)
-echo "$arr[2]"      # 12 (WRONG)
-echo "All (@): ${arr[@]}"
-echo "All (*): ${arr[*]}"
-echo
+# echo ${arr[2]}     # 3
+# echo "${arr[2]}"    # 3 (safe - recommended)
 
-# Length
-echo "Length: ${#arr[@]}"
-echo
+# echo $arr[2]        # 12 (WRONG)
+# echo "secod element is : ${arr[2]}"
+# # echo "$arr[2]"      # 12 (WRONG)
+# echo "All (@): ${arr[@]}"
+# echo "All (*): ${arr[*]}" #recommended
+# # echo
 
-# Slice
-echo "First 3: ${arr[@]:0:3}"
-echo "From index 2: ${arr[@]:2}"
-echo "2 elements: ${arr[@]:2:2}"
-echo
+# # # Length
+# echo "Length: ${#arr[*]}"
+# echo
 
-# Add elements
-arr+=("orange")
-arr+=(9 10 11)
-echo "After add: ${arr[@]}"
-echo
+# # Slice
+# echo "First 3: ${arr[@]:0:3}"
+# echo "From index 2: ${arr[@]:2}"
+# echo "2 elements: ${arr[@]:2:2}"
+# echo
 
-# Remove elements
-unset arr[3]
-unset arr[1] arr[3]
-echo "After remove: ${arr[@]}"
-echo
+# # Add elements
+# arr+=("orange")
+# arr+=(9 10 11)
+# echo "After add: ${arr[*]}"
+# echo
 
-# Indexes
-echo "Indexes: ${!arr[@]}"
-echo
+# # Remove elements
+# unset arr[3]
+# unset arr[1] arr[3]
+# echo "After remove: ${arr[@]}"
+# echo
 
-# Update
-arr[0]="grapes"
-echo "After update: ${arr[@]}"
-echo
+# # Indexes
+# echo "Indexes: ${!arr[@]}"
+# echo
 
-# Reset array
-temp=(a b c)
-temp=()
-echo "Temp cleared: ${temp[@]}"
-echo
+# # Update
+# arr[0]="grapes"
+# echo "After update: ${arr[@]}"
+# echo
 
-# Assoc array
-declare -A user=([name]="Anees" [role]="Engineer")
-echo "User: ${user[name]} (${user[role]})"
-echo
+# # Reset array
+# temp=(a b c)
+# temp=()
+# echo "Temp cleared: ${temp[@]}"
+# echo
 
-# String → array
-text="one two three"
-read -a words <<< "$text"
-echo "Words: ${words[@]}"
-echo
+# # Assoc array
+# declare -A user=([name]="Anees" [role]="Engineer")
+# echo "User: ${user[name]} (${user[role]})"
+# echo
 
-
-
-# # Check value
-# search="mango"
-# found=false
-# for item in "${arr[@]}"; do
-#   [[ "$item" == "$search" ]] && found=true && break
-# done
-# echo "Contains: $found"
+# # String → array
+# text="one two three"
+# read -a words <<< "$text"
+# echo "Words: ${words[@]}"
 # echo
 
 
 
-# # Loop values
-# for item in "${arr[@]}"; do
-#   echo "Val -> $item"
-# done
-# echo
+# # # Check value
+# # search="mango"
+# # found=false
+# # for item in "${arr[@]}"; do
+# #   [[ "$item" == "$search" ]] && found=true && break
+# # done
+# # echo "Contains: $found"
+# # echo
 
-# # Loop index
-# for i in "${!arr[@]}"; do
-#   echo "Idx $i = ${arr[$i]}"
-# done
-# echo
 
-# # Loop assoc
-# for key in "${!user[@]}"; do
-#   echo "$key = ${user[$key]}"
-# done
-# echo
 
-# echo "===== END ====="
+# # # Loop values
+# # for item in "${arr[@]}"; do
+# #   echo "Val -> $item"
+# # done
+# # echo
+
+# # # Loop index
+# # for i in "${!arr[@]}"; do
+# #   echo "Idx $i = ${arr[$i]}"
+# # done
+# # echo
+
+# # # Loop assoc
+# # for key in "${!user[@]}"; do
+# #   echo "$key = ${user[$key]}"
+# # done
+# # echo
+
+# # echo "===== END ====="

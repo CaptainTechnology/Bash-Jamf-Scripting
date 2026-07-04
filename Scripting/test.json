@@ -1,0 +1,125 @@
+{
+    "title": "Google Chrome",
+    "description": "Configure https://chromeenterprise.google/policies/#ManagedBookmarks",
+    "type": "object",
+    "payloadType": "com.google.Chrome",
+    "properties": {
+        "ManagedBookmarks": {
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "title": "Rename Folder",
+                        "description": "The default folder name for managed bookmarks is 'Managed bookmarks'. Enter a name below to rename the parent folder. Please Note: only use this option 1 time.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "toplevel_name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "toplevel_name"
+                        ]
+                    },
+                    {
+                        "type": "object",
+                        "title": "Bookmarks",
+                        "description": "These keys hold the bookmark's name and target. Users can't change the folders the bookmarks are placed in (though they can hide it from the bookmark bar). Chrome amends incomplete URLs as if they were submitted through the address bar. For example, 'google.com' becomes 'https://google.com/'.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "url": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "url"
+                        ]
+                    },
+                    {
+                        "type": "object",
+                        "title": "Subfolders depth 1",
+                        "description": "Set up a subfolder by defining a bookmark without a 'url' key, but with an additional 'children' key. This key also has a list of bookmarks. This key also has a list of bookmarks, some of which can also be folders.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "children": {
+                                "type": "array",
+                                "items": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "title": "Bookmarks",
+                                            "description": "These keys hold the bookmark's name and target. Users can't change the folders the bookmarks are placed in (though they can hide it from the bookmark bar). Chrome amends incomplete URLs as if they were submitted through the address bar. For example, 'google.com' becomes 'https://google.com/'.",
+                                            "additionalProperties": false,
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "url": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "name",
+                                                "url"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "title": "Subfolders depth 2",
+                                            "description": "Set up a subfolder by defining a bookmark without a 'url' key, but with an additional 'children' key. This key also has a list of bookmarks.",
+                                            "additionalProperties": false,
+                                            "properties": {
+                                                "children": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "title": "Bookmarks",
+                                                                "description": "These keys hold the bookmark's name and target. Users can't change the folders the bookmarks are placed in (though they can hide it from the bookmark bar). Chrome amends incomplete URLs as if they were submitted through the address bar. For example, 'google.com' becomes 'https://google.com/'.",
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "name": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "url": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "name",
+                                                                    "url"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "name"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

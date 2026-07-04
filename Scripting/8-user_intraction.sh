@@ -16,7 +16,7 @@
 
 read -p "Enter multiple names (space-separated): " -a names
 
-echo "All names are: ${names[@]}"
+echo "All names are: ${names[*]}"
 
 # Access individually
 echo "First name: ${names[0]}"
