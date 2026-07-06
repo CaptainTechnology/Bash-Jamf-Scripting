@@ -14,14 +14,13 @@
 
 # csrutil disable -> disable the SIP
 
-
 # These both script kill the already running jamf policy
 
 # sudo pkill jamf
 # sudo pkill -f "jamf policy" 
 
 
-
+sudo dsconfigad -remove -username admin -password password@123
 
 # check boundle id ,
 # If you know the application name:
@@ -29,3 +28,13 @@ osascript -e 'id of app "Safari"'
 # If you know the application's path:
 mdls -name kMDItemCFBundleIdentifier "/Applications/Google Chrome.app" 
 # com.microsoft.wdav -> don't add "com.microsoft.wdav" in smart group
+
+# open -a safari https://www.google.com -> open safari
+# open -a safari image.png -> open image
+
+# option + cursor -> go to the specific 
+
+#disable the firevault before enrolling the devices becouse conflict can be arrise during enrollment
+
+
+

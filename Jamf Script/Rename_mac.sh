@@ -1,11 +1,11 @@
 #!/bin/bash
 
 serial=$(system_profiler SPHardwareDataType | awk '/Serial Number/{print $4}')
-newName="OrhanTech-$serial"
+newName="TechInfo-$serial"
 echo $newName
-# scutil --set ComputerName "$newName"
-# scutil --set LocalHostName "$newName"
-# scutil --set HostName "$newName"
+scutil --set ComputerName "$newName"
+scutil --set LocalHostName "$newName"
+scutil --set HostName "$newName"
 
 jamf recon
 

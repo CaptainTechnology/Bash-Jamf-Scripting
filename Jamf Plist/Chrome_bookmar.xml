@@ -1,0 +1,54 @@
+<!-- Add bookmark in google chrome 
+1. Create Configuration profile
+2. application & custom setting
+2. click upload 
+3. prefrence domain -> com.google.Chrome
+4. add below xml in proptry list
+5. scope and save and deploy
+6. refrest policy -> chrome://policy-->
+
+
+<!-- second methond json using below link 
+https://support.jamf.com/en/articles/11024625-add-bookmarks-for-google-chrome-on-macos-devices-in-jamf-pro -->
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>ManagedBookmarks</key>
+    <array>
+
+        <dict>
+            <key>toplevel_name</key>
+            <string>Company Resources</string>
+        </dict>
+
+        <dict>
+            <key>name</key>
+            <string>Jamf Pro</string>
+            <key>url</key>
+            <string>https://jamftechnology.jamfcloud.com/</string>
+        </dict>
+
+        <dict>
+            <key>name</key>
+            <string>Jamf Training</string>
+            <key>url</key>
+            <string>https://trainingcatalog.jamf.com/page/full-catalog</string>
+        </dict>
+
+        <dict>
+            <key>name</key>
+            <string>JumpCloud Console</string>
+            <key>url</key>
+            <string>https://console.jumpcloud.com/</string>
+        </dict>
+<dict>
+<key>name</key>
+<string>Jamf Articles</string>
+<key>url</key>
+<string>https://support.jamf.com/en/collections/12369024-jamf-pro</string>
+</dict>
+    </array>
+</dict>
+</plist>
