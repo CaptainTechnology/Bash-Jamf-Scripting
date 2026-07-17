@@ -226,3 +226,51 @@ This confirms that the Nudge Configuration Profile is installed successfully.
 * ☐ Policy scoped
 * ☐ Configuration Profile verified
 * ☐ Nudge UI launched successfully
+
+
+
+
+# importain commond, to exit nude and do the fresh start
+
+
+# Quit Nudge
+pkill Nudge
+
+# Remove user preferences
+rm -f ~/Library/Preferences/com.github.macadmins.Nudge.plist
+
+# Remove user cache
+rm -rf ~/Library/Caches/com.github.macadmins.Nudge
+
+# Remove user application support
+rm -rf ~/Library/Application\ Support/Nudge
+
+# Remove logs
+rm -rf ~/Library/Logs/Nudge
+
+# Remove saved state
+rm -rf ~/Library/Saved\ Application\ State/com.github.macadmins.Nudge.savedState
+
+# Remove any launch agent (if present)
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.github.macadmins.Nudge*.plist 2>/dev/null
+rm -f ~/Library/LaunchAgents/com.github.macadmins.Nudge*.plist
+
+# Remove any system-wide Nudge support (if present)
+rm -rf /Library/Application\ Support/Nudge
+rm -rf /Library/Logs/Nudge
+rm -f /Library/Preferences/com.github.macadmins.Nudge.plist
+
+
+
+#again
+
+pkill Nudge
+
+rm -f ~/Library/Preferences/com.github.macadmins.Nudge.plist
+rm -rf ~/Library/Application\ Support/Nudge
+rm -rf ~/Library/Caches/com.github.macadmins.Nudge
+rm -rf ~/Library/Logs/Nudge
+rm -rf ~/Library/Saved\ Application\ State/com.github.macadmins.Nudge.savedState 
+
+sudo rm -rf /Library/Application\ Support/Nudge
+sudo rm -f /Library/Preferences/com.github.macadmins.Nudge.plist
