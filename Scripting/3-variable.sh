@@ -9,11 +9,13 @@
 
 #store commond into the variable
 hostname=$(hostname)
+
+
 present_files=$(ls -l)
-echo $present_files
-#or 
-# ls -l
-echo $hostname
+echo $present_files >> present2.txt
+# #or 
+# # ls -l
+# echo $hostname
 
 # readonly New_host_name="24-M-FVFDHBDGM6KH"
 # New_host_name="25-M-FVFDHBDGM6KH"

@@ -21,3 +21,8 @@ echo "All names are: ${names[*]}"
 # Access individually
 echo "First name: ${names[0]}"
 echo "Second name: ${names[1]}"
+
+for name in "${names[@]}" # use @ recommended
+do
+    echo "Name is : $name"
+done

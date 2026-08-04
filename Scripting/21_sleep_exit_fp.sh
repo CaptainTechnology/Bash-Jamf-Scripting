@@ -7,7 +7,7 @@ sleep 2
 
 # run a command
 ls test.txt
-
+echo $?
 # check status using $?
 if [ $? -eq 0 ]
 then

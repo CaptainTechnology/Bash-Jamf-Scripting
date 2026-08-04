@@ -18,10 +18,15 @@
 # echo "Modulus: $mod"
 # echo "10 and 15 is $((10+15))"
 
-read -p "Enter first number: " a
-read -p "Enter second number: " b
+# read -p "Enter first number: " a
+# read -p "Enter second number: " b
 
-echo "Addition: $((a + b))"
-echo "Subtraction: $((a - b))"
-echo "Multiplication: $((a * b))"
-echo "Division: $((a / b))"
+# echo "Addition: $((a + b))"
+# echo "Subtraction: $((a - b))"
+# echo "Multiplication: $((a * b))"
+# echo "Division: $((a / b))"
+
+# read -p "Enter First Name and Last Name : " -a Full_Name
+# echo "${Full_Name[@]}"
+
+# echo "$((4+5))"

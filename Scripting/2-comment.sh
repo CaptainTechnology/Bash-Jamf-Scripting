@@ -9,4 +9,10 @@ echo "single line comment #"
  this is muliti line comment 
 comment
 
+set -e
+
+<< comment 
+this is multi line comment 
+comment
+
 echo "hello"

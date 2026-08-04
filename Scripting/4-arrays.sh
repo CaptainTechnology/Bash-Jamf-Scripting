@@ -9,6 +9,7 @@ for name in "${names[@]}"; do
     echo "Hello, $name"
 done
 
+
 for name in "${names[*]}"; do # merge all elements into one long string
     echo "Hello, $name"
 done

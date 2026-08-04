@@ -1,9 +1,9 @@
 
 
 #!/bin/bash
-folder="/Users/Nykaa-it/Desktop/Bash Scripting"
+folder="/Users/nykaa-it/Desktop/Bash-Jamf-Scripting/Scripting"
 
-
+echo "$[[ -d $folder ]]"
 
 if [[ -d $folder ]]
 then
@@ -16,14 +16,14 @@ else
     echo "we can't identify"
 fi
 
-file="/Users/Nykaa-it/Desktop/Bash Scripting/1-basic.sh"
+file="/Users/nykaa-it/Desktop/Bash-Jamf-Scripting/Scripting/1-basic.sh"
 if [[ -f $file ]]
 then
-    echo "folder exist  "
+    echo "file exist  "
     sleep 1
 elif [[ ! -f $file ]]
 then
-    echo "Folder doesn't exit"
+    echo "File doesn't exit"
 else
     echo "we can't identify"
 fi

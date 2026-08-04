@@ -25,14 +25,14 @@
 
 #!/bin/bash
 
-for file in 0*; do
-  # Remove only leading zero(s)
-  new_name=$(echo "$file" | sed 's/^0*//')
+# for file in 0*; do
+#   # Remove only leading zero(s)
+#   new_name=$(echo "$file" | sed 's/^0*//')
   
-  # Avoid empty filename (edge case like "000")
-  if [ -z "$new_name" ]; then
-    continue
-  fi
+#   # Avoid empty filename (edge case like "000")
+#   if [ -z "$new_name" ]; then
+#     continue
+#   fi
 
-  mv "$file" "$new_name"
-done
+#   mv "$file" "$new_name"
+# done

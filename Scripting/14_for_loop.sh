@@ -1,16 +1,12 @@
 
 #!/bin/bash
 
-echo "----- Example 1: Basic for loop -----"
-# for i in 1 2 3 4 5
+# echo "----- Example 1: Basic for loop -----"
+# for i in 1 2 3 4 5 10
 # do
 #   echo "Number: $i"
 # done
 
-# for i in 1 2 3 4 5
-# do 
-#     echo "Number is : $i"
-# done
 
 
 # echo "----- Example 2: Range {1..5} -----"
@@ -19,18 +15,12 @@ echo "----- Example 1: Basic for loop -----"
 #   echo $i
 # done
 
-# echo "----- Example 3: Range with step {1..10..2} -----"
-
-# for i in {1..10..2}
-# do
-#   echo $i
-# done
 
 
 # echo "----- Example 5: Array loop -----"
 # arr=(A B C)
 # echo "${arr[@]}"
-# echo "${arr[@]}"
+# echo "${arr[*]}"
 # for item in "${arr[@]}"
 # do
 #   echo $item
@@ -74,11 +64,24 @@ echo "----- Example 1: Basic for loop -----"
 #     echo "Num is : $i"
 # done
 
-myArr=(1 2 3 hello captain jack)
-length=${#myArr[@]}
+# myArr=(1 2 3 hello captain jack)
+# length=${#myArr[@]}
 
-for ((i=0; i<$length; i++))
+# for ((i=0; i<$length; i++))
+# do
+#     echo ${myArr[i]}
+# done
+
+
+# files=$(file in *)
+# echo $files
+
+# for f in file *
+# do
+#     echo "file is : $f"
+# done
+
+for (( i==0;i<=10;i++))
 do
-    echo ${myArr[i]}
+    echo "$i"
 done
-
