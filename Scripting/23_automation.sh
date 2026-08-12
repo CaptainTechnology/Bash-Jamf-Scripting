@@ -65,11 +65,14 @@
 0 2 * * * /Users/nykaa-it/Desktop/Bash-Jamf-Scripting/Scripting/cron_script.sh
 # Run every day at 2:00 AM
 
-5 * * * * /Users/nykaa-it/Desktop/Bash-Jamf-Scripting/Scripting/cron_script.sh
+*/5 * * * * /Users/nykaa-it/Desktop/Bash-Jamf-Scripting/Scripting/cron_script.sh
 # Run every 5 minutes
 
 0 * * * * /Users/nykaa-it/Desktop/Bash-Jamf-Scripting/Scripting/cron_script.sh
-# Run every hour
+# Run every hour at 1:00 2:00
+
+5 * * * * "/Users/nykaa-it/Desktop/Bash-Jamf-Scripting/Scripting/cron_script.sh"
+# run at 5 min every hours like 01:05 02:05
 
 30 18 * * * /Users/nykaa-it/Desktop/Bash-Jamf-Scripting/Scripting/cron_script.sh
 # Run every day at 6:30 PM

@@ -1,38 +1,15 @@
 #!/bin/bash
-# create your won typeof
 
-# typeof() {
-#   local var="$1"
+# Script Name: Setup Cron Job
+# Purpose: Make the target script executable and create a cron job.
+# Schedule: Every day at 10:30 AM
 
-#   # Check integer
-#   if [[ "$var" =~ ^-?[0-9]+$ ]]; then
-#     echo "integer"
+SCRIPT="/usr/local/Jamf_Script/crontab.sh"
 
-#   # Check float
-#   elif [[ "$var" =~ ^-?[0-9]+\.[0-9]+$ ]]; then
-#     echo "float"
+# Make the script executable
+chmod +x "$SCRIPT"
 
-#   # Check boolean
-#   elif [[ "$var" == "true" || "$var" == "false" ]]; then
-#     echo "boolean"
+# Add the cron job
+(crontab -l 2>/dev/null; echo "30 10 * * * /bin/bash $SCRIPT") | crontab -
 
-#   # Default
-#   else
-#     echo "string"
-#   fi
-# }
-
-
-#!/bin/bash
-
-# for file in 0*; do
-#   # Remove only leading zero(s)
-#   new_name=$(echo "$file" | sed 's/^0*//')
-  
-#   # Avoid empty filename (edge case like "000")
-#   if [ -z "$new_name" ]; then
-#     continue
-#   fi
-
-#   mv "$file" "$new_name"
-# done
+echo "Cron job configured successfully."
