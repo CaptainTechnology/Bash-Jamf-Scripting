@@ -1,0 +1,22 @@
+A shell is a text-based interface that lets you talk to your computer.
+There are different types of shells. Bash (Bourne Again SHell)Hardware:
+
+    Hardware Overview:
+
+      Model Name: MacBook Air
+      Model Identifier: MacBookAir9,1
+      Processor Name: Quad-Core Intel Core i5
+      Processor Speed: 1.1 GHz
+      Number of Processors: 1
+      Total Number of Cores: 4
+      L2 Cache (per Core): 512 KB
+      L3 Cache: 6 MB
+      Hyper-Threading Technology: Enabled
+      Memory: 8 GB
+      System Firmware Version: 2103.100.6.0.0 (iBridge: 23.16.14242.0.0,0)
+      OS Loader Version: 583~2317
+      Serial Number (system): FVFDHBDGM6KH
+      Hardware UUID: 57FFC120-A62E-5CD6-A8AC-947EA54C7C42
+      Provisioning UDID: 57FFC120-A62E-5CD6-A8AC-947EA54C7C42
+      Activation Lock Status: Disabled
+
