@@ -164,6 +164,16 @@ networksetup -getinfo Wi-Fi                   # Show Wi-Fi IP, subnet, router an
 networksetup -getairportnetwork en0           # Show connected Wi-Fi SSID
 networksetup -listpreferredwirelessnetworks en0 # Show saved/preferred Wi-Fi networks
 
+scutil --dns                                  # Show DNS resolver configuration
+nslookup <hostname>                           # Perform basic DNS lookup
+dig <hostname>                                # Perform detailed DNS lookup
+dig +short <hostname>                         # Show resolved IP address only
+dscacheutil -q host -a name <hostname>        # Check macOS hostname resolution
+ping -c 4 <hostname>                          # Test basic network connectivity
+ping -c 4 8.8.8.8                             # Test Internet without DNS
+curl -Iv https://<jamf-url>                  # Test HTTPS/Jamf server connectivity
+nc -zv <jamf-url> 443                         # Test TCP port 443 connectivity
+
 ---
 
 ## 7. Disk & Storage
