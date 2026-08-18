@@ -11,6 +11,11 @@ sudo sysadminctl -deleteUser username -> delete the user only no home folder
 sudo rm -rf /Users/Admin -> delete user as well as home folder
 # ( this was second admin account but I was not able to run sudo rm -rf /Users/Admin , permission denied but with the help of jamf I deleted it )
 
+# Change Firewall Status-> On / Off or get status
+/usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+/usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate off
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 
+
 
 # csrutil disable -> disable the SIP
 
@@ -24,7 +29,7 @@ sudo rm -rf /Users/Admin -> delete user as well as home folder
 
 <!-- profiles show -type configuration | grep -i "com.github.macadmins.Nudge" -> verify the profile is installed or not -->
 
-
+# remove system from domain
 sudo dsconfigad -remove -username admin -password password@123
 
 # check boundle id ,
@@ -40,12 +45,6 @@ mdls -name kMDItemCFBundleIdentifier "/Applications/Google Chrome.app"
 # option + cursor -> go to the specific 
 
 #disable the firevault before enrolling the devices becouse conflict can be arrise during enrollment
-
-
-
-
-
-
 
 
 # macOS Command Reference — Jamf Admin Cheat Sheet
@@ -147,23 +146,23 @@ sudo spctl --status                         # Gatekeeper status
 csrutil status                              # SIP (System Integrity Protection) status
 sudo security list-keychains                # List keychains
 security find-certificate -a -p /Library/Keychains/System.keychain  # Certs installed
-```
+
 
 ---
 
 ## 6. Networking
 
-```bash
-ipconfig getifaddr en0                      # Get IP of Wi-Fi/Ethernet interface
-networksetup -listallhardwareports          # List network interfaces
-networksetup -getinfo Wi-Fi                 # Wi-Fi config details
-scutil --dns                                # DNS resolver config
-ping -c 4 <hostname>                        # Basic connectivity test
-curl -Iv https://your.jamfcloud.com         # Test Jamf Pro server reachability
-nslookup <hostname>                         # DNS lookup
-netstat -rn                                 # Routing table (check default gateway)
-dscacheutil -flushcache; sudo killall -HUP mDNSResponder   # Flush DNS cache
-```
+ifconfig                                      # Show all network interfaces and details
+ifconfig | grep "inet "                       # Show all IPv4 addresses
+ifconfig | grep "inet6 "                      # Show all IPv6 addresses
+ifconfig | grep "ether "                     # Show all MAC addresses
+networksetup -listallhardwareports            # Show hardware port ↔ interface mapping
+ipconfig getifaddr en0                        # Get IP address of en0
+ifconfig en0 | grep ether                     # Get MAC address of en0
+networksetup -getmacaddress Wi-Fi             # Get Wi-Fi MAC address
+networksetup -getinfo Wi-Fi                   # Show Wi-Fi IP, subnet, router and IPv6 details
+networksetup -getairportnetwork en0           # Show connected Wi-Fi SSID
+networksetup -listpreferredwirelessnetworks en0 # Show saved/preferred Wi-Fi networks
 
 ---
 
@@ -267,3 +266,6 @@ arch=$(uname -m)   # "arm64" or "x86_64"
 - Wrap EA output in `<result>...</result>` tags when writing Extension Attribute scripts.
 - `jamf policy -id` is great for testing a specific policy without waiting for the ongoing trigger.
 - `log show`/`log stream` with predicates is your best friend for MDM profile push failures — much more reliable than just checking `jamf.log`.
+
+
+

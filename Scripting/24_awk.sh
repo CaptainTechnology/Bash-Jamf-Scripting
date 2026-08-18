@@ -37,11 +37,8 @@
 # awk 'tolower($0) ~  /paul/ {print $0}' 24_2_sample.txt
 # grep -i "paul" 24_2_sample.txt # good for this type of task
 
-grep -i "alex" 24_2_sample.txt | awk '{print $1}'
-grep -i "alex" 24_2_sample.txt | awk 'NR==1{print $1}' # print first occurance only
-
-
-
+# grep -i "alex" 24_2_sample.txt | awk '{print $1}'
+# grep -i "alex" 24_2_sample.txt | awk 'NR==1{print $1}' # print first occurance only
 
 
 # # Extract the 3rd column
@@ -49,3 +46,8 @@ grep -i "alex" 24_2_sample.txt | awk 'NR==1{print $1}' # print first occurance o
 # echo "$(ls -l /dev/console)" # crw-------  1 nykaa-it  staff  0 Aug  4 17:58 /dev/console
 
 # echo "The user is: $loggedInUser"
+
+# -F "seprator" this seprate the value based on seprator, : or , or " " or anything
+# echo $(echo "/Users/nykaa-it/Desktop/Bash-Jamf-Scripting/Scripting/25.1_grep.txt: PUID: 57FFC120-A62E-5CD6-A8AC-947EA54C7C42" | awk -F ':' '{print $1}')
+# echo $(echo "/Users/nykaa-it/Desktop/Bash-Jamf-Scripting/Scripting/25.1_grep.txt: PUID: 57FFC120-A62E-5CD6-A8AC-947EA54C7C42" | awk -F ':' '{print $2}')
+# echo $(echo "/Users/nykaa-it/Desktop/Bash-Jamf-Scripting/Scripting/25.1_grep.txt: PUID: 57FFC120-A62E-5CD6-A8AC-947EA54C7C42" | awk -F ':' '{print $3}')

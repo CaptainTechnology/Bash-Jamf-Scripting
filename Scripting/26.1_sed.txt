@@ -1,0 +1,6 @@
+The BashBook is a great Mac.
+captain
+
+#configuration
+FirewallEnabled=True
+Filevault Status=Enable

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Check battery condition
-batteryCondition=$(system_profiler SPPowerDataType | awk -F": " '/Condition/ {print $2}')
+batteryCondition=$(system_profiler SPPowerDataType | awk -F":" '/Condition/ {print $2}')
 echo $batteryCondition
 if [ "batteryCondition" -eq "Normal" ]
 then
