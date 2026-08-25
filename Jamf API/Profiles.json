@@ -1,0 +1,90 @@
+[
+    {
+        "id": 2,
+        "name": "FileVault - Enforcement"
+    },
+    {
+        "id": 3,
+        "name": "Chrome - Extension mangement"
+    },
+    {
+        "id": 5,
+        "name": "JAMF Connect "
+    },
+    {
+        "id": 11,
+        "name": "JAMF Connect - Intra ID Integration"
+    },
+    {
+        "id": 12,
+        "name": "Managed background item Notifications"
+    },
+    {
+        "id": 13,
+        "name": "JC login"
+    },
+    {
+        "id": 14,
+        "name": "JC Connect"
+    },
+    {
+        "id": 16,
+        "name": "Integration - Jamf connect with Intra ID"
+    },
+    {
+        "id": 18,
+        "name": "JAMF Connect Demo"
+    },
+    {
+        "id": 20,
+        "name": "Disable - Guest Account login"
+    },
+    {
+        "id": 21,
+        "name": "Default Browser - Google Chrome"
+    },
+    {
+        "id": 22,
+        "name": "MacOs - Restrictions"
+    },
+    {
+        "id": 33,
+        "name": "Google Chrome - Add Bookmark"
+    },
+    {
+        "id": 34,
+        "name": "Google Chrome - Add Bookmark (json)"
+    },
+    {
+        "id": 75,
+        "name": "Testing configuration"
+    },
+    {
+        "id": 77,
+        "name": "Nudge - Configuration"
+    },
+    {
+        "id": 78,
+        "name": "Full Disk Access - Configuration"
+    },
+    {
+        "id": 79,
+        "name": "Default Plan - Jamf Protect Configuration"
+    },
+    {
+        "id": 80,
+        "name": "Test Or reminder"
+    },
+    {
+        "id": 82,
+        "name": "DDM OS Reminder"
+    },
+    {
+        "id": 83,
+        "name": "software update test"
+    },
+    {
+        "id": 88,
+        "name": "Set - Wallpaper Picture macOs"
+    }
+]
