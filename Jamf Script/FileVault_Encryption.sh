@@ -9,10 +9,6 @@
   # Policy - Re-issue recory key -> Disk encryption > issue new recovery key > or you can choose custom script mentioned below > update inventory
 
 
-
-
-
-
 #!/bin/bash
 
 ####################################################################################################

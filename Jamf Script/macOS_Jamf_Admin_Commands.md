@@ -7,6 +7,8 @@ dscl . list /Users UniqueID | awk '$2 >= 501 {print $1}'
 # Admin
 # nykaa-it
 
+<!-- defaults write com.apple.screencapture location /Desktop/your_folder_Screenshot --> Change Screenshot location
+
 sudo sysadminctl -deleteUser username -> delete the user only no home folder
 sudo rm -rf /Users/Admin -> delete user as well as home folder
 # ( this was second admin account but I was not able to run sudo rm -rf /Users/Admin , permission denied but with the help of jamf I deleted it )
@@ -112,22 +114,35 @@ log show --predicate 'subsystem == "com.apple.ManagedClient"' --last 1h
 ## 4. User & Account Management
 
 ```bash
-dscl . -list /Users                         # List all local users
-dscl . -read /Users/<username>              # Full user record
-dscl . -list /Users UniqueID                # UIDs of all users
-dscl . -create /Users/<username>            # Create local user (scripted account)
-sysadminctl -deleteUser <username>          # Delete a user (with home dir prompt)
-sysadminctl -deleteUser <username> -keepHome
-dscl . -passwd /Users/<username> <newpass>  # Reset local password
-id <username>                               # UID/GID and group membership
-who                                         # Currently logged in users
-stat -f%Su /dev/console                     # Get console (logged-in) user — very common in EAs
-last                                        # Login history
-```
+#!/bin/bash
 
-Common Extension Attribute pattern for "current logged-in user":
-```bash
-currentUser=$( scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/ && ! /loginwindow/ { print $3 }' )
+whoami                                      # Current terminal user
+who                                         # Logged-in users
+stat -f%Su /dev/console                     # Current GUI user
+
+dscl . -list /Users UniqueID | awk '$2 >= 501 {print $1}'        # Normal users only
+id <username>                               # UID, GID and groups
+# dscl . -read /Users/<username> UniqueID PrimaryGroupID RealName UserShell  # User details
+
+
+sudo sysadminctl -addUser <username> -fullName "<Full Name>" -password <password>  # Create user
+sudo sysadminctl -addUser <username> -fullName "<Full Name>" -password <password> -admin  # Create admin
+sudo dscl . -passwd /Users/<username> <new_password>  # Change password
+resetpassword # work in recovery mode
+sudo sysadminctl -deleteUser <username>    # Delete user
+sudo sysadminctl -deleteUser <username> -keepHome  # Delete user, keep Home
+
+dscl . -list /Groups                      # List all groups
+groups <username>                         # User's groups
+dscl . -read /Groups/<groupname> GroupMembership  # Group members
+
+sudo dseditgroup -o create <groupname>    # Create group
+sudo dseditgroup -o edit -a <username> -t user <groupname>  # Add user to group
+sudo dseditgroup -o edit -d <username> -t user <groupname>  # Remove user from group
+sudo dseditgroup -o delete <groupname>    # Delete group
+
+dsmemberutil checkmembership -U <username> -G admin  # Check admin membership
+
 ```
 
 ---
@@ -185,6 +200,15 @@ diskutil apfs list                          # APFS container/volume details
 df -h                                       # Human-readable disk usage
 du -sh /path/to/folder                      # Size of a folder
 diskutil eraseDisk APFS <name> disk2        # Erase a disk (destructive!)
+
+diskutil list                         # Physical disks and partitions
+diskutil apfs list                   # APFS containers and volumes
+diskutil info "Macintosh HD"         # Macintosh HD details
+diskutil info "Macintosh HD - Data"  # Data volume details
+df -h                                # Disk usage
+mount                                # Mounted filesystems
+diskutil apfs listCryptoUsers        # APFS/FileVault crypto users
+fdesetup status                      # FileVault status
 ```
 
 ---
@@ -276,6 +300,4 @@ arch=$(uname -m)   # "arm64" or "x86_64"
 - Wrap EA output in `<result>...</result>` tags when writing Extension Attribute scripts.
 - `jamf policy -id` is great for testing a specific policy without waiting for the ongoing trigger.
 - `log show`/`log stream` with predicates is your best friend for MDM profile push failures — much more reliable than just checking `jamf.log`.
-
-
 
