@@ -1,0 +1,2095 @@
+#!/bin/zsh --no-rcs
+# shellcheck shell=bash
+
+####################################################################################################
+#
+# Declarative Device Management macOS Reminder: Dialog Preference Test
+#
+# This standalone test script reads DDM OS Reminder preferences, resolves
+# localized dialog content, and displays the standard reminder dialog using
+# test runtime values so Mac Admins can validate Configuration Profile
+# deployment.
+#
+# Usage:
+#   zsh Resources/reminderDialogPreferenceTest.zsh
+#   zsh Resources/reminderDialogPreferenceTest.zsh --rdnn <your.reverse.domain.name.notation>
+#
+# Notes:
+# - To test another language, set `LanguageOverride` in the target preference
+#   domain (for example: `defaults write /Library/Preferences/org.churchofjesuschrist.dorm
+#   LanguageOverride -string "de"`), then re-run this script.
+# - This script tests dialog appearance only. It intentionally omits DDM log
+#   parsing, LaunchDaemon behavior, meeting-aware delays, and enforcement logic.
+#
+# http://snelson.us/ddm
+#
+####################################################################################################
+
+
+
+####################################################################################################
+#
+# Argument Parsing
+#
+####################################################################################################
+
+cliReverseDomainNameNotation=""
+cliPreDeadlineThresholdMinutes=""
+cliAggressiveModePreview="NO"
+scriptRelativePath="Resources/reminderDialogPreferenceTest.zsh"
+defaultUsage="zsh ${scriptRelativePath}"
+rdnnUsage="zsh ${scriptRelativePath} --rdnn <your.reverse.domain.name.notation>"
+
+function validateReverseDomainNameNotation() {
+    local rdnnValue="${1}"
+    local rdnnRegex='^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$'
+
+    [[ "${rdnnValue}" =~ ${rdnnRegex} ]]
+}
+
+while [[ "$#" -gt 0 ]]; do
+    case "${1}" in
+        --help|-h)
+            echo "Usage:"
+            echo "  ${defaultUsage}"
+            echo "  ${rdnnUsage}"
+            echo "  ${rdnnUsage} --pre-deadline-threshold 30"
+            echo "  ${rdnnUsage} --aggressive"
+            exit 0
+            ;;
+        --rdnn)
+            if [[ -z "${2:-}" ]]; then
+                echo "Usage:"
+                echo "  ${defaultUsage}"
+                echo "  ${rdnnUsage}"
+                exit 64
+            fi
+
+            if ! validateReverseDomainNameNotation "${2}"; then
+                echo "Invalid --rdnn '${2}'. Use reverse-domain labels with letters, digits, dots, and hyphens only."
+                echo "Usage:"
+                echo "  ${defaultUsage}"
+                echo "  ${rdnnUsage}"
+                exit 64
+            fi
+
+            cliReverseDomainNameNotation="${2}"
+            shift 2
+            ;;
+        --pre-deadline-threshold)
+            if [[ -z "${2:-}" || ! "${2}" =~ ^[0-9]+$ || "${2}" -lt 1 || "${2}" -gt 999 ]]; then
+                echo "Usage:"
+                echo "  ${defaultUsage}"
+                echo "  ${rdnnUsage}"
+                echo "  ${rdnnUsage} --pre-deadline-threshold 30"
+                exit 64
+            fi
+
+            cliPreDeadlineThresholdMinutes="${2}"
+            shift 2
+            ;;
+        --aggressive)
+            cliAggressiveModePreview="YES"
+            shift
+            ;;
+        *)
+            echo "Usage:"
+            echo "  ${defaultUsage}"
+            echo "  ${rdnnUsage}"
+            echo "  ${rdnnUsage} --pre-deadline-threshold 30"
+            echo "  ${rdnnUsage} --aggressive"
+            exit 64
+            ;;
+    esac
+done
+
+if [[ -n "${cliPreDeadlineThresholdMinutes}" && "${cliAggressiveModePreview}" == "YES" ]]; then
+    echo "--pre-deadline-threshold and --aggressive are mutually exclusive preview modes."
+    exit 64
+fi
+
+
+
+####################################################################################################
+#
+# Global Variables
+#
+####################################################################################################
+
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local:/usr/local/bin
+
+scriptVersion="4.1.0"
+humanReadableScriptName="DDM OS Reminder Dialog Preference Test"
+errorCount=0
+
+autoload -Uz is-at-least
+
+typeset -ga temporaryFiles=()
+declare -A preferenceExplicitlySet=()
+
+foundManagedPreferences="false"
+foundLocalPreferences="false"
+dialogLanguage="en"
+deadlineFormatLanguageCode="en"
+relativeDeadlineTimeFormatHumanReadable="+%-l:%M %p"
+dialogSupportsMarkdownColor="NO"
+hideSecondaryButton="NO"
+blurscreen="--noblurscreen"
+updateOrUpgradeMode="update"
+updateStagingStatus="Fully staged"
+requestedAppearanceMode=""
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Organization Variables
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+reverseDomainNameNotation="${cliReverseDomainNameNotation:-org.churchofjesuschrist}"
+organizationScriptName="dorm"
+rerunCommand="${defaultUsage}"
+
+# Preference plist domains
+preferenceDomain="${reverseDomainNameNotation}.${organizationScriptName}"
+managedPreferencesPlist="/Library/Managed Preferences/${preferenceDomain}"
+localPreferencesPlist="/Library/Preferences/${preferenceDomain}"
+deploymentScriptDirectory="/Library/Management/${reverseDomainNameNotation}"
+dorStatePlistPath="${deploymentScriptDirectory}/dor-state.plist"
+dailyReminderTimesResolvedCSV=""
+minutesBeforeDeadlineReminderScheduleResolvedCSV=""
+preDeadlineThresholdReminderMode="NO"
+preDeadlineThresholdMinutes="${cliPreDeadlineThresholdMinutes}"
+aggressiveModeActive="NO"
+aggressiveModeHoursPastDeadline="0"
+typeset -ga dailyReminderTimesResolved=()
+typeset -ga minutesBeforeDeadlineReminderScheduleResolved=()
+
+if [[ -n "${cliReverseDomainNameNotation}" ]]; then
+    rerunCommand="zsh ${scriptRelativePath} --rdnn ${reverseDomainNameNotation}"
+fi
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Preference Configuration Map
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+declare -A preferenceConfiguration=(
+    ["daysOfExcessiveUptimeWarning"]="numeric|0"
+    ["quietPeriodMinutes"]="numeric|76"
+    ["outsideDisplayWindowPeriodicReminderDays"]="numeric|28"
+    ["pastDeadlineRestartMinimumUptimeMinutes"]="numeric|75"
+    ["pastDeadlineForceTimerSeconds"]="numeric|60"
+    ["pastDeadlineForceRedisplayDelaySeconds"]="numeric|5"
+    ["minimumDiskFreePercentage"]="numeric|99"
+    ["disableButton2InsteadOfHide"]="boolean|YES"
+    ["organizationOverlayiconURL"]="string|https://use2.ics.services.jamfcloud.com/icon/hash_2d64ce7f0042ad68234a2515211adb067ad6714703dd8ebd6f33c1ab30354b1d"
+    ["organizationOverlayiconURLdark"]="string|https://use2.ics.services.jamfcloud.com/icon/hash_d3a3bc5e06d2db5f9697f9b4fa095bfecb2dc0d22c71aadea525eb38ff981d39"
+    ["swapOverlayAndLogo"]="boolean|NO"
+    ["dateFormatDeadlineHumanReadable"]="string|+%a, %d-%b-%Y, %-l:%M %p"
+    ["dailyReminderTimes"]="string|08:00,12:00,16:00"
+    ["minutesBeforeDeadlineReminderSchedule"]="string|45,30,15,10,5"
+    ["aggressiveModePastDeadlineHours"]="numeric|2"
+    ["aggressiveModeFrequencyMinutes"]="numeric|20"
+    ["supportTeamName"]="string|IT Support"
+    ["supportTeamPhone"]="string|+1 (801) 555-1212"
+    ["hideSupportTeamPhone"]="boolean|NO"
+    ["supportTeamEmail"]="string|rescue@domain.org"
+    ["hideSupportTeamEmail"]="boolean|NO"
+    ["supportTeamWebsite"]="string|https://support.domain.org"
+    ["hideSupportTeamWebsite"]="boolean|NO"
+    ["supportKB"]="string|Update macOS on Mac"
+    ["hideSupportKB"]="boolean|NO"
+    ["infobuttonaction"]="string|https://support.apple.com/108382"
+    ["supportKBURL"]="string|[Update macOS on Mac](https://support.apple.com/108382)"
+    ["supportAssistanceMessage"]="string|<br><br>For assistance, please contact **{supportTeamName}** by clicking the (?) button in the bottom, right-hand corner."
+    ["hideSupportAssistanceMessage"]="boolean|NO"
+    ["languageOverride"]="string|auto"
+    ["title"]="string|macOS {titleMessageUpdateOrUpgrade} Required"
+    ["button1text"]="string|Open Software Update"
+    ["button2text"]="string|Remind Me Later"
+    ["infobuttontext"]="string|Update macOS on Mac"
+    ["excessiveUptimeWarningMessage"]="string|<br><br>**Note:** Your Mac has been powered-on for **{uptimeHumanReadable}**. For more reliable results, please manually restart your Mac before proceeding."
+    ["diskSpaceWarningMessage"]="string|<br><br>**Note:** Your Mac has only **{diskSpaceHumanReadable}**, which may prevent this macOS {titleMessageUpdateOrUpgradeLower}."
+    ["stagedUpdateMessage"]="string|<br><br>**Good news!** The macOS {ddmVersionString} update has already been downloaded to your Mac and is ready to install. Installation will proceed quickly when you click **{button1text}**."
+    ["partiallyStagedUpdateMessage"]="string|<br><br>Your Mac has begun downloading and preparing required macOS update components. Installation will be quicker once all assets have finished staging."
+    ["pendingDownloadMessage"]="string|<br><br>Your Mac will begin downloading the update shortly."
+    ["hideStagedInfo"]="boolean|NO"
+    ["relativeDeadlineToday"]="string|Today"
+    ["relativeDeadlineTomorrow"]="string|Tomorrow"
+    ["updateWord"]="string|Update"
+    ["upgradeWord"]="string|Upgrade"
+    ["softwareUpdateButtonTextUpdate"]="string|Restart Now"
+    ["softwareUpdateButtonTextUpgrade"]="string|Upgrade Now"
+    ["restartNowButtonText"]="string|Restart Now"
+    ["infoboxLabelCurrent"]="string|Current"
+    ["infoboxLabelRequired"]="string|Required"
+    ["infoboxLabelDeadline"]="string|Deadline"
+    ["infoboxLabelDaysRemaining"]="string|Day(s) Remaining"
+    ["infoboxLabelLastRestart"]="string|Last Restart"
+    ["infoboxLabelFreeDiskSpace"]="string|Free Disk Space"
+    ["deadlineEnforcementMessageAbsolute"]="string|However, your Mac **will automatically restart and {titleMessageUpdateOrUpgradeLower}** on **{deadlineDisplay}** if you have not {titleMessageUpdateOrUpgradeLower}d before the deadline."
+    ["deadlineEnforcementMessageRelative"]="string|However, your Mac **will automatically restart and {titleMessageUpdateOrUpgradeLower}** **{deadlineDisplay}** if you have not {titleMessageUpdateOrUpgradeLower}d before the deadline."
+    ["preDeadlineThresholdTitle"]="string|macOS {titleMessageUpdateOrUpgrade} Deadline Soon"
+    ["preDeadlineThresholdMessage"]="string|**{preDeadlineThresholdEmphasisOpen}Your Mac reaches the macOS {ddmVersionString} enforcement deadline in {minutesBeforeDeadline} minutes.{preDeadlineThresholdEmphasisClose}**<br><br>Happy {weekday}, {loggedInUserFirstname}!<br><br>{preDeadlineThresholdEmphasisOpen}Please {titleMessageUpdateOrUpgradeLower} to macOS {ddmVersionString} now to avoid the automatic enforcement action at {ddmVersionStringDeadlineHumanReadable}.{preDeadlineThresholdEmphasisClose}{updateReadyMessage}<br><br>To perform the {titleMessageUpdateOrUpgradeLower} now, click **{button1text}**, review the on-screen instructions, then click **{softwareUpdateButtonText}**.{excessiveUptimeWarningMessage}{diskSpaceWarningMessage}{supportAssistanceMessage}"
+    ["aggressiveModeTitle"]="string|macOS {titleMessageUpdateOrUpgrade} Required Now"
+    ["aggressiveModeMessage"]="string|**Your Mac is past its required macOS {titleMessageUpdateOrUpgradeLower} deadline.**<br><br>Happy {weekday}, {loggedInUserFirstname}!<br><br>Your Mac has been past the **{ddmVersionStringDeadlineHumanReadable}** deadline for **{aggressiveModeHoursPastDeadline} hour(s)** and still needs macOS {ddmVersionString}.<br><br>Click **{button1text}**, review the on-screen instructions, then click **{softwareUpdateButtonText}**. This reminder will return about every {aggressiveModeFrequencyMinutes} minutes until macOS {ddmVersionString} is installed.{updateReadyMessage}{excessiveUptimeWarningMessage}{diskSpaceWarningMessage}{supportAssistanceMessage}"
+    ["message"]="string|**A required macOS {titleMessageUpdateOrUpgradeLower} is now available**<br><br>Happy {weekday}, {loggedInUserFirstname}!<br><br>Please {titleMessageUpdateOrUpgradeLower} to macOS **{ddmVersionString}** to ensure your Mac remains secure and compliant with organizational policies.{updateReadyMessage}<br><br>To perform the {titleMessageUpdateOrUpgradeLower} now, click **{button1text}**, review the on-screen instructions, then click **{softwareUpdateButtonText}**.<br><br>If you are unable to perform this {titleMessageUpdateOrUpgradeLower} now, click **{button2text}** to be reminded again later (which is disabled when the deadline is imminent).<br><br>{deadlineEnforcementMessage}{excessiveUptimeWarningMessage}{diskSpaceWarningMessage}{supportAssistanceMessage}"
+    ["infobox"]="string|**{infoboxLabelCurrent}:** macOS {installedmacOSVersion}<br><br>**{infoboxLabelRequired}:** macOS {ddmVersionString}<br><br>**{infoboxLabelDeadline}:** {infoboxDeadlineDisplay}<br><br>**{infoboxLabelDaysRemaining}:** {infoboxDaysRemainingDisplay}<br><br>**{infoboxLabelLastRestart}:** {infoboxLastRestartDisplay}<br><br>**{infoboxLabelFreeDiskSpace}:** {diskSpaceHumanReadable}"
+    ["helpmessage"]="string|For assistance, please contact: **{supportTeamName}**<br>- **Telephone:** {supportTeamPhone}<br>- **Email:** {supportTeamEmail}<br>- **Website:** {supportTeamWebsite}<br>- **Knowledge Base Article:** {supportKBURL}<br><br>**User Information:**<br>- **Full Name:** {userfullname}<br>- **User Name:** {username}<br><br>**Computer Information:**<br>- **Computer Name:** {computername}<br>- **Serial Number:** {serialnumber}<br>- **macOS:** {osversion}<br><br>**Script Information:**<br>- **Dialog:** {dialogVersion}<br>- **Script:** {scriptVersion}<br>"
+    ["helpimage"]="string|qr={infobuttonaction}"
+)
+
+declare -A plistKeyMap=(
+    ["daysOfExcessiveUptimeWarning"]="DaysOfExcessiveUptimeWarning"
+    ["quietPeriodMinutes"]="QuietPeriodMinutes"
+    ["outsideDisplayWindowPeriodicReminderDays"]="OutsideDisplayWindowPeriodicReminderDays"
+    ["pastDeadlineRestartMinimumUptimeMinutes"]="PastDeadlineRestartMinimumUptimeMinutes"
+    ["pastDeadlineForceTimerSeconds"]="PastDeadlineForceTimerSeconds"
+    ["pastDeadlineForceRedisplayDelaySeconds"]="PastDeadlineForceRedisplayDelaySeconds"
+    ["minimumDiskFreePercentage"]="MinimumDiskFreePercentage"
+    ["disableButton2InsteadOfHide"]="DisableButton2InsteadOfHide"
+    ["organizationOverlayiconURL"]="OrganizationOverlayIconURL"
+    ["organizationOverlayiconURLdark"]="OrganizationOverlayIconURLdark"
+    ["swapOverlayAndLogo"]="SwapOverlayAndLogo"
+    ["dateFormatDeadlineHumanReadable"]="DateFormatDeadlineHumanReadable"
+    ["dailyReminderTimes"]="DailyReminderTimes"
+    ["minutesBeforeDeadlineReminderSchedule"]="MinutesBeforeDeadlineReminderSchedule"
+    ["aggressiveModePastDeadlineHours"]="AggressiveModePastDeadlineHours"
+    ["aggressiveModeFrequencyMinutes"]="AggressiveModeFrequencyMinutes"
+    ["supportTeamName"]="SupportTeamName"
+    ["supportTeamPhone"]="SupportTeamPhone"
+    ["hideSupportTeamPhone"]="HideSupportTeamPhone"
+    ["supportTeamEmail"]="SupportTeamEmail"
+    ["hideSupportTeamEmail"]="HideSupportTeamEmail"
+    ["supportTeamWebsite"]="SupportTeamWebsite"
+    ["hideSupportTeamWebsite"]="HideSupportTeamWebsite"
+    ["supportKB"]="SupportKB"
+    ["hideSupportKB"]="HideSupportKB"
+    ["infobuttonaction"]="InfoButtonAction"
+    ["supportKBURL"]="SupportKBURL"
+    ["supportAssistanceMessage"]="SupportAssistanceMessage"
+    ["hideSupportAssistanceMessage"]="HideSupportAssistanceMessage"
+    ["languageOverride"]="LanguageOverride"
+    ["title"]="Title"
+    ["button1text"]="Button1Text"
+    ["button2text"]="Button2Text"
+    ["infobuttontext"]="InfoButtonText"
+    ["excessiveUptimeWarningMessage"]="ExcessiveUptimeWarningMessage"
+    ["diskSpaceWarningMessage"]="DiskSpaceWarningMessage"
+    ["stagedUpdateMessage"]="StagedUpdateMessage"
+    ["partiallyStagedUpdateMessage"]="PartiallyStagedUpdateMessage"
+    ["pendingDownloadMessage"]="PendingDownloadMessage"
+    ["hideStagedInfo"]="HideStagedUpdateInfo"
+    ["relativeDeadlineToday"]="RelativeDeadlineToday"
+    ["relativeDeadlineTomorrow"]="RelativeDeadlineTomorrow"
+    ["updateWord"]="UpdateWord"
+    ["upgradeWord"]="UpgradeWord"
+    ["softwareUpdateButtonTextUpdate"]="SoftwareUpdateButtonTextUpdate"
+    ["softwareUpdateButtonTextUpgrade"]="SoftwareUpdateButtonTextUpgrade"
+    ["restartNowButtonText"]="RestartNowButtonText"
+    ["infoboxLabelCurrent"]="InfoboxLabelCurrent"
+    ["infoboxLabelRequired"]="InfoboxLabelRequired"
+    ["infoboxLabelDeadline"]="InfoboxLabelDeadline"
+    ["infoboxLabelDaysRemaining"]="InfoboxLabelDaysRemaining"
+    ["infoboxLabelLastRestart"]="InfoboxLabelLastRestart"
+    ["infoboxLabelFreeDiskSpace"]="InfoboxLabelFreeDiskSpace"
+    ["deadlineEnforcementMessageAbsolute"]="DeadlineEnforcementMessageAbsolute"
+    ["deadlineEnforcementMessageRelative"]="DeadlineEnforcementMessageRelative"
+    ["preDeadlineThresholdTitle"]="PreDeadlineThresholdTitle"
+    ["preDeadlineThresholdMessage"]="PreDeadlineThresholdMessage"
+    ["aggressiveModeTitle"]="AggressiveModeTitle"
+    ["aggressiveModeMessage"]="AggressiveModeMessage"
+    ["message"]="Message"
+    ["infobox"]="InfoBox"
+    ["helpmessage"]="HelpMessage"
+    ["helpimage"]="HelpImage"
+)
+
+
+
+####################################################################################################
+#
+# Functions
+#
+####################################################################################################
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Console Logging
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function updateConsoleLog() {
+    echo "${organizationScriptName} (${scriptVersion}): $( date +%Y-%m-%d\ %H:%M:%S ) - ${1}"
+}
+
+function preFlight()    { updateConsoleLog "[PRE-FLIGHT]      ${1}"; }
+function notice()       { updateConsoleLog "[NOTICE]          ${1}"; }
+function info()         { updateConsoleLog "[INFO]            ${1}"; }
+function warning()      { updateConsoleLog "[WARNING]         ${1}"; let errorCount++; }
+function error()        { updateConsoleLog "[ERROR]           ${1}"; let errorCount++; }
+function fatal()        { updateConsoleLog "[FATAL ERROR]     ${1}"; exit 1; }
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Cleanup
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function cleanupTemporaryFiles() {
+    local filePath=""
+
+    for filePath in "${temporaryFiles[@]}"; do
+        [[ -n "${filePath}" && -e "${filePath}" ]] && rm -f "${filePath}"
+    done
+}
+
+trap cleanupTemporaryFiles EXIT
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Preference Utilities
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function plistFileIsReadable() {
+    local plistPath="${1}"
+
+    [[ -f "${plistPath}" ]] || return 1
+
+    /usr/bin/plutil -lint "${plistPath}" >/dev/null 2>&1
+}
+
+function readPlistValue() {
+    local plistPath="${1}"
+    local plistKey="${2}"
+    local plistValue=""
+
+    plistValue=$(/usr/libexec/PlistBuddy -c "Print :${plistKey}" "${plistPath}" 2>/dev/null)
+    echo "${plistValue}"
+}
+
+function currentConsoleUser() {
+    echo "show State:/Users/ConsoleUser" | scutil | awk '/Name :/ { print $3 }'
+}
+
+function resolveEffectiveUserContext() {
+    local currentUser="$(id -un 2>/dev/null)"
+    local consoleUser="$(currentConsoleUser)"
+
+    if [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
+        loggedInUser="${SUDO_USER}"
+        notice "Running with sudo; resolving language and appearance for '${loggedInUser}'."
+    elif [[ -n "${currentUser}" && "${currentUser}" != "root" ]]; then
+        loggedInUser="${currentUser}"
+    elif [[ -n "${consoleUser}" && "${consoleUser}" != "loginwindow" && "${consoleUser}" != "root" ]]; then
+        loggedInUser="${consoleUser}"
+    else
+        fatal "Unable to determine a non-root user context for preview."
+    fi
+
+    if ! id "${loggedInUser}" >/dev/null 2>&1; then
+        fatal "Resolved user '${loggedInUser}' does not exist on this Mac."
+    fi
+
+    loggedInUserID=$(id -u "${loggedInUser}" 2>/dev/null)
+    loggedInUserFullname=$(id -F "${loggedInUser}" 2>/dev/null)
+    [[ -z "${loggedInUserFullname}" ]] && loggedInUserFullname="${loggedInUser}"
+
+    loggedInUserFirstname=$(echo "${loggedInUserFullname}" | sed -E 's/^.*, // ; s/([^ ]*).*/\1/' | sed 's/\(.\{25\}\).*/\1…/' | awk '{print ( $0 == toupper($0) ? toupper(substr($0,1,1))substr(tolower($0),2) : toupper(substr($0,1,1))substr($0,2) )}')
+    [[ -z "${loggedInUserFirstname}" ]] && loggedInUserFirstname="${loggedInUser}"
+
+    loggedInUserHomeDirectory=$(dscl . read "/Users/${loggedInUser}" NFSHomeDirectory 2>/dev/null | awk '{print $2}')
+    [[ -z "${loggedInUserHomeDirectory}" && "${USER:-}" == "${loggedInUser}" ]] && loggedInUserHomeDirectory="${HOME}"
+
+    preFlight "Effective user: ${loggedInUser} (${loggedInUserID})"
+    preFlight "Effective user home: ${loggedInUserHomeDirectory}"
+}
+
+function normalizeBooleanValue() {
+    local value="${1}"
+
+    case "${value:l}" in
+        1|true|yes) echo "YES" ;;
+        0|false|no) echo "NO" ;;
+        *)          echo "" ;;
+    esac
+}
+
+function loadDefaultPreferences() {
+    local prefKey=""
+
+    preferenceExplicitlySet=()
+
+    for prefKey in "${(@k)preferenceConfiguration}"; do
+        local prefConfig="${preferenceConfiguration[$prefKey]}"
+        local defaultValue="${prefConfig#*|}"
+        printf -v "${prefKey}" '%s' "${defaultValue}"
+    done
+}
+
+function internalPreferenceKeyForPlistKey() {
+    local plistKey="${1}"
+    local prefKey=""
+
+    for prefKey in "${(@k)preferenceConfiguration}"; do
+        if [[ "${plistKeyMap[$prefKey]:-$prefKey}" == "${plistKey}" ]]; then
+            echo "${prefKey}"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+function isKnownPreferencePlistKey() {
+    internalPreferenceKeyForPlistKey "${1}" >/dev/null 2>&1
+}
+
+function setNumericPreferenceValue() {
+    local targetVariable="${1}"
+    local rawValue="${2}"
+
+    if [[ "${rawValue}" =~ ^[0-9]+$ ]] && (( rawValue >= 0 && rawValue <= 999 )); then
+        printf -v "${targetVariable}" '%s' "${rawValue}"
+        preferenceExplicitlySet["${targetVariable}"]="true"
+    else
+        warning "Ignoring invalid numeric value '${rawValue}' for '${targetVariable}'; keeping default '${(P)targetVariable}'."
+    fi
+}
+
+function setBooleanPreferenceValue() {
+    local targetVariable="${1}"
+    local rawValue="${2}"
+    local normalizedValue=""
+
+    normalizedValue="$(normalizeBooleanValue "${rawValue}")"
+    if [[ -n "${normalizedValue}" ]]; then
+        printf -v "${targetVariable}" '%s' "${normalizedValue}"
+        preferenceExplicitlySet["${targetVariable}"]="true"
+    else
+        warning "Ignoring invalid boolean value '${rawValue}' for '${targetVariable}'; keeping default '${(P)targetVariable}'."
+    fi
+}
+
+function setStringPreferenceValue() {
+    local targetVariable="${1}"
+    local rawValue="${2}"
+
+    printf -v "${targetVariable}" '%s' "${rawValue}"
+    preferenceExplicitlySet["${targetVariable}"]="true"
+}
+
+function languageSuffixForCode() {
+    local code=""
+    local firstSegment=""
+    local segmentIndex=0
+    local -a codeSegments=()
+
+    code="$(sanitizeLanguageCode "${1}")"
+    [[ -z "${code}" ]] && echo "" && return
+
+    IFS='_' read -r -A codeSegments <<< "${code}"
+    firstSegment="${codeSegments[1]:l}"
+    code="${(C)firstSegment}"
+
+    if (( ${#codeSegments[@]} > 1 )); then
+        for (( segmentIndex=2; segmentIndex<=${#codeSegments[@]}; segmentIndex++ )); do
+            code="${code}_${codeSegments[segmentIndex]:u}"
+        done
+    fi
+
+    echo "${code}"
+}
+
+function sanitizeLanguageCode() {
+    local languageCode="${1:l}"
+
+    languageCode="${languageCode#\"}"
+    languageCode="${languageCode%\"}"
+    languageCode="${languageCode#\'}"
+    languageCode="${languageCode%\'}"
+    languageCode="${languageCode//-/_}"
+    languageCode="${languageCode// /}"
+
+    while [[ "${languageCode}" == *"__"* ]]; do
+        languageCode="${languageCode//__/_}"
+    done
+
+    while [[ "${languageCode}" == _* ]]; do
+        languageCode="${languageCode#_}"
+    done
+
+    while [[ "${languageCode}" == *_ ]]; do
+        languageCode="${languageCode%_}"
+    done
+
+    echo "${languageCode}"
+}
+
+function baseLanguageCodeForCode() {
+    local languageCode=""
+
+    languageCode="$(sanitizeLanguageCode "${1}")"
+    echo "${languageCode%%_*}"
+}
+
+function requestedDialogLanguageCode() {
+    local requestedLanguageCode=""
+
+    if [[ -n "${languageOverride}" && "${languageOverride:l}" != "auto" ]]; then
+        requestedLanguageCode="${languageOverride}"
+    else
+        requestedLanguageCode="$(detectLoggedInUserLanguageCode)"
+    fi
+
+    requestedLanguageCode="$(sanitizeLanguageCode "${requestedLanguageCode}")"
+    echo "${requestedLanguageCode}"
+}
+
+function loadDynamicLocalizedPreferenceOverridesFromPlist() {
+    local plistPath="${1}"
+    local rawKey=""
+    local -a plistKeys=()
+
+    while IFS= read -r rawKey; do
+        [[ -n "${rawKey}" ]] && plistKeys+=("${rawKey}")
+    done < <(/usr/libexec/PlistBuddy -c "Print" "${plistPath}" 2>/dev/null | awk '
+        /^[[:space:]]+/ && /Localized_/ {
+            key=$0
+            sub(/^[[:space:]]+/, "", key)
+            sub(/ =.*/, "", key)
+            print key
+        }
+    ')
+
+    for rawKey in "${plistKeys[@]}"; do
+        local baseRaw="${rawKey%%Localized_*}"
+        local codePart="${rawKey##*Localized_}"
+        local internalBase=""
+        local internalSuffix=""
+        local internalKey=""
+        local dynamicValue=""
+
+        [[ -z "${baseRaw}" || -z "${codePart}" ]] && continue
+
+        if internalBase="$(internalPreferenceKeyForPlistKey "${baseRaw}")"; then
+            :
+        else
+            internalBase="${baseRaw:0:1:l}${baseRaw:1}"
+        fi
+
+        internalSuffix="$(languageSuffixForCode "${codePart}")"
+        internalKey="${internalBase}Localized${internalSuffix}"
+        dynamicValue="$(readPlistValue "${plistPath}" "${rawKey}")"
+
+        printf -v "${internalKey}" '%s' "${dynamicValue}"
+        preferenceExplicitlySet["${internalKey}"]="true"
+    done
+}
+
+function loadPreferenceOverrides() {
+    local prefKey=""
+
+    loadDefaultPreferences
+
+    if plistFileIsReadable "${managedPreferencesPlist}.plist"; then
+        foundManagedPreferences="true"
+        preFlight "Reading managed preferences from '${managedPreferencesPlist}.plist'"
+    elif [[ -f "${managedPreferencesPlist}.plist" ]]; then
+        warning "Managed preferences plist exists but failed validation: ${managedPreferencesPlist}.plist"
+    fi
+
+    if plistFileIsReadable "${localPreferencesPlist}.plist"; then
+        foundLocalPreferences="true"
+        preFlight "Reading local preferences from '${localPreferencesPlist}.plist'"
+    elif [[ -f "${localPreferencesPlist}.plist" ]]; then
+        warning "Local preferences plist exists but failed validation: ${localPreferencesPlist}.plist"
+    fi
+
+    if [[ "${foundManagedPreferences}" == "false" && "${foundLocalPreferences}" == "false" ]]; then
+        warning "No valid preference plist found for domain '${preferenceDomain}'."
+        return 1
+    fi
+
+    for prefKey in "${(@k)preferenceConfiguration}"; do
+        local prefConfig="${preferenceConfiguration[$prefKey]}"
+        local prefType="${prefConfig%%|*}"
+        local plistKey="${plistKeyMap[$prefKey]:-$prefKey}"
+        local sourcePlist=""
+        local rawValue=""
+
+        if [[ "${foundManagedPreferences}" == "true" ]] && /usr/libexec/PlistBuddy -c "Print :${plistKey}" "${managedPreferencesPlist}.plist" >/dev/null 2>&1; then
+            sourcePlist="${managedPreferencesPlist}.plist"
+        elif [[ "${foundLocalPreferences}" == "true" ]] && /usr/libexec/PlistBuddy -c "Print :${plistKey}" "${localPreferencesPlist}.plist" >/dev/null 2>&1; then
+            sourcePlist="${localPreferencesPlist}.plist"
+        else
+            continue
+        fi
+
+        rawValue="$(readPlistValue "${sourcePlist}" "${plistKey}")"
+
+        case "${prefType}" in
+            numeric)
+                setNumericPreferenceValue "${prefKey}" "${rawValue}"
+                ;;
+            boolean)
+                setBooleanPreferenceValue "${prefKey}" "${rawValue}"
+                ;;
+            string|*)
+                setStringPreferenceValue "${prefKey}" "${rawValue}"
+                ;;
+        esac
+    done
+
+    if [[ "${foundLocalPreferences}" == "true" ]]; then
+        loadDynamicLocalizedPreferenceOverridesFromPlist "${localPreferencesPlist}.plist"
+    fi
+
+    if [[ "${foundManagedPreferences}" == "true" ]]; then
+        loadDynamicLocalizedPreferenceOverridesFromPlist "${managedPreferencesPlist}.plist"
+    fi
+
+    resolveDateFormatDeadlineHumanReadable
+
+    preFlight "Preferences loaded"
+    return 0
+}
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Localization and Date Formatting
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function localeForDialogLanguageCode() {
+    local languageCode=""
+    local baseLanguageCode=""
+    local preferredUtf8Locale=""
+    local discoveredLocale=""
+
+    languageCode="$(sanitizeLanguageCode "${1}")"
+    baseLanguageCode="$(baseLanguageCodeForCode "${languageCode}")"
+
+    preferredUtf8Locale=$(locale -a 2>/dev/null | awk -v code="${languageCode}" '
+        BEGIN { IGNORECASE = 1 }
+        {
+            localeLower = tolower($0)
+            if (localeLower ~ ("^" code "(_[^[:space:]]+)?\\.utf-?8$")) {
+                print $0
+                exit
+            }
+        }
+    ')
+
+    if [[ -n "${preferredUtf8Locale}" ]]; then
+        echo "${preferredUtf8Locale}"
+        return
+    fi
+
+    discoveredLocale=$(locale -a 2>/dev/null | awk -v code="${languageCode}" '
+        BEGIN { IGNORECASE = 1 }
+        {
+            localeLower = tolower($0)
+            if (localeLower ~ ("^" code "(_[^[:space:]]+)?$")) {
+                print $0
+                exit
+            }
+        }
+    ')
+
+    if [[ -n "${discoveredLocale}" ]]; then
+        echo "${discoveredLocale}"
+        return
+    fi
+
+    case "${baseLanguageCode}" in
+        de) echo "de_DE.UTF-8" ;;
+        en) echo "en_US.UTF-8" ;;
+        es) echo "es_ES.UTF-8" ;;
+        fr) echo "fr_FR.UTF-8" ;;
+        it) echo "it_IT.UTF-8" ;;
+        ja) echo "ja_JP.UTF-8" ;;
+        nl) echo "nl_NL.UTF-8" ;;
+        pt) echo "pt_PT.UTF-8" ;;
+        *)  echo "" ;;
+    esac
+}
+
+function formatDateWithLanguageCode() {
+    local languageCode="${1}"
+    local inputFormat="${2}"
+    local inputValue="${3}"
+    local outputFormat="${4}"
+    local localeForDate=""
+    local formattedDate=""
+
+    localeForDate="$(localeForDialogLanguageCode "${languageCode}")"
+
+    if [[ -n "${localeForDate}" ]]; then
+        formattedDate=$(LC_TIME="${localeForDate}" date -jf "${inputFormat}" "${inputValue}" "${outputFormat}" 2>/dev/null)
+    fi
+
+    if [[ -z "${formattedDate}" ]]; then
+        formattedDate=$(date -jf "${inputFormat}" "${inputValue}" "${outputFormat}" 2>/dev/null)
+    fi
+
+    echo "${formattedDate}"
+}
+
+function formatDateWithDialogLocale() {
+    local inputFormat="${1}"
+    local inputValue="${2}"
+    local outputFormat="${3}"
+
+    formatDateWithLanguageCode "${dialogLanguage}" "${inputFormat}" "${inputValue}" "${outputFormat}"
+}
+
+function trimSurroundingWhitespace() {
+    local value="${1}"
+
+    while [[ -n "${value}" && "${value[1]}" == [[:space:]] ]]; do
+        value="${value[2,-1]}"
+    done
+
+    while [[ -n "${value}" && "${value[-1]}" == [[:space:]] ]]; do
+        value="${value[1,-2]}"
+    done
+
+    echo "${value}"
+}
+
+function readRuntimeStateValue() {
+    local stateKey="${1}"
+
+    [[ -f "${dorStatePlistPath}" ]] || return 0
+
+    /usr/libexec/PlistBuddy -c "Print :${stateKey}" "${dorStatePlistPath}" 2>/dev/null
+}
+
+function validateRuntimeStatePlistForPreview() {
+    [[ -f "${dorStatePlistPath}" ]] || return 1
+
+    if [[ ! -x "/usr/libexec/PlistBuddy" ]]; then
+        warning "Missing required PlistBuddy binary: /usr/libexec/PlistBuddy; runtime scheduler state cannot be inspected."
+        return 1
+    fi
+
+    if ! /usr/libexec/PlistBuddy -c "Print" "${dorStatePlistPath}" >/dev/null 2>&1; then
+        warning "Unable to read runtime scheduler state plist '${dorStatePlistPath}'. Check plist syntax and permissions."
+        return 1
+    fi
+
+    return 0
+}
+
+function validateReminderTimeEntry() {
+    local timeEntry="$(trimSurroundingWhitespace "${1}")"
+
+    if [[ "${timeEntry}" =~ ^([01][0-9]|2[0-3]):([0-5][0-9])$ ]]; then
+        echo "${timeEntry}"
+        return 0
+    fi
+
+    return 1
+}
+
+function normalizeDailyReminderTimes() {
+    local rawValue="${1}"
+    local warnOnInvalid="${2:-NO}"
+    local rawEntry=""
+    local normalizedEntry=""
+    local normalizedCSV=""
+    local -a rawEntries=()
+    local -a validEntries=()
+
+    IFS=',' read -r -A rawEntries <<< "${rawValue}"
+
+    for rawEntry in "${rawEntries[@]}"; do
+        normalizedEntry="$(validateReminderTimeEntry "${rawEntry}")"
+        if [[ -n "${normalizedEntry}" ]]; then
+            validEntries+=("${normalizedEntry}")
+        elif [[ -n "$(trimSurroundingWhitespace "${rawEntry}")" && "${warnOnInvalid}" == "YES" ]]; then
+            warning "Ignoring invalid DailyReminderTimes entry '${rawEntry}'. Expected HH:MM in 24-hour time."
+        fi
+    done
+
+    if (( ${#validEntries[@]} == 0 )); then
+        return 1
+    fi
+
+    validEntries=($(printf "%s\n" "${validEntries[@]}" | LC_ALL=C sort -u))
+    normalizedCSV="${(j:,:)validEntries}"
+    echo "${normalizedCSV}"
+}
+
+function parseDailyReminderTimes() {
+    local rawValue="${1}"
+    local warnOnInvalid="${2:-NO}"
+    local normalizedCSV=""
+
+    normalizedCSV="$(normalizeDailyReminderTimes "${rawValue}" "${warnOnInvalid}")" || return 1
+
+    dailyReminderTimesResolvedCSV="${normalizedCSV}"
+    IFS=',' read -r -A dailyReminderTimesResolved <<< "${dailyReminderTimesResolvedCSV}"
+    echo "${dailyReminderTimesResolvedCSV}"
+}
+
+function normalizeMinuteThresholdSchedule() {
+    local rawValue="${1}"
+    local warnOnInvalid="${2:-NO}"
+    local rawEntry=""
+    local trimmedEntry=""
+    local normalizedEntry=""
+    local normalizedCSV=""
+    local -a rawEntries=()
+    local -a validEntries=()
+
+    rawValue="$(trimSurroundingWhitespace "${rawValue}")"
+    if [[ -z "${rawValue}" ]]; then
+        echo ""
+        return 0
+    fi
+
+    IFS=',' read -r -A rawEntries <<< "${rawValue}"
+
+    for rawEntry in "${rawEntries[@]}"; do
+        trimmedEntry="$(trimSurroundingWhitespace "${rawEntry}")"
+        if [[ "${trimmedEntry}" =~ ^[0-9]+$ ]]; then
+            normalizedEntry=$(( 10#${trimmedEntry} ))
+            if (( normalizedEntry >= 1 && normalizedEntry <= 999 )); then
+                validEntries+=("${normalizedEntry}")
+            elif [[ "${warnOnInvalid}" == "YES" ]]; then
+                warning "Ignoring invalid MinutesBeforeDeadlineReminderSchedule entry '${rawEntry}'. Expected integer 1-999."
+            fi
+        elif [[ -n "${trimmedEntry}" && "${warnOnInvalid}" == "YES" ]]; then
+            warning "Ignoring invalid MinutesBeforeDeadlineReminderSchedule entry '${rawEntry}'. Expected integer 1-999."
+        fi
+    done
+
+    if (( ${#validEntries[@]} == 0 )); then
+        return 1
+    fi
+
+    validEntries=($(printf "%s\n" "${validEntries[@]}" | LC_ALL=C sort -nr -u))
+    normalizedCSV="${(j:,:)validEntries}"
+    echo "${normalizedCSV}"
+}
+
+function parseMinuteThresholdSchedule() {
+    local rawValue="${1}"
+    local warnOnInvalid="${2:-NO}"
+    local normalizedCSV=""
+
+    normalizedCSV="$(normalizeMinuteThresholdSchedule "${rawValue}" "${warnOnInvalid}")" || return 1
+
+    minutesBeforeDeadlineReminderScheduleResolvedCSV="${normalizedCSV}"
+    minutesBeforeDeadlineReminderScheduleResolved=()
+    if [[ -n "${minutesBeforeDeadlineReminderScheduleResolvedCSV}" ]]; then
+        IFS=',' read -r -A minutesBeforeDeadlineReminderScheduleResolved <<< "${minutesBeforeDeadlineReminderScheduleResolvedCSV}"
+    fi
+    echo "${minutesBeforeDeadlineReminderScheduleResolvedCSV}"
+}
+
+function resolveMinuteThresholdSchedule() {
+    local defaultMinuteThresholdSchedule="${preferenceConfiguration[minutesBeforeDeadlineReminderSchedule]#*|}"
+    local normalizedMinuteThresholdSchedule=""
+
+    normalizedMinuteThresholdSchedule="$(normalizeMinuteThresholdSchedule "${minutesBeforeDeadlineReminderSchedule}" "YES")" || {
+        warning "MinutesBeforeDeadlineReminderSchedule value '${minutesBeforeDeadlineReminderSchedule}' is invalid; defaulting to '${defaultMinuteThresholdSchedule}'."
+        normalizedMinuteThresholdSchedule="$(normalizeMinuteThresholdSchedule "${defaultMinuteThresholdSchedule}")"
+    }
+
+    minutesBeforeDeadlineReminderSchedule="${normalizedMinuteThresholdSchedule}"
+    parseMinuteThresholdSchedule "${minutesBeforeDeadlineReminderSchedule}" >/dev/null 2>&1
+}
+
+function resolveAggressiveModeFrequency() {
+    local defaultAggressiveModeFrequencyMinutes="${preferenceConfiguration[aggressiveModeFrequencyMinutes]#*|}"
+
+    if [[ ! "${aggressiveModeFrequencyMinutes}" =~ ^[0-9]+$ ]] || (( aggressiveModeFrequencyMinutes < 1 || aggressiveModeFrequencyMinutes > 999 )); then
+        warning "AggressiveModeFrequencyMinutes value '${aggressiveModeFrequencyMinutes}' is invalid; defaulting to '${defaultAggressiveModeFrequencyMinutes}'."
+        aggressiveModeFrequencyMinutes="${defaultAggressiveModeFrequencyMinutes}"
+    fi
+}
+
+function resolveAggressiveModeThreshold() {
+    local defaultAggressiveModePastDeadlineHours="${preferenceConfiguration[aggressiveModePastDeadlineHours]#*|}"
+
+    if [[ ! "${aggressiveModePastDeadlineHours}" =~ ^[0-9]+$ ]] || (( aggressiveModePastDeadlineHours < 0 || aggressiveModePastDeadlineHours > 999 )); then
+        warning "AggressiveModePastDeadlineHours value '${aggressiveModePastDeadlineHours}' is invalid; defaulting to '${defaultAggressiveModePastDeadlineHours}'."
+        aggressiveModePastDeadlineHours="${defaultAggressiveModePastDeadlineHours}"
+    fi
+}
+
+function resolveDailyReminderTimes() {
+    local defaultDailyReminderTimes="${preferenceConfiguration[dailyReminderTimes]#*|}"
+    local normalizedDailyReminderTimes=""
+
+    normalizedDailyReminderTimes="$(normalizeDailyReminderTimes "${dailyReminderTimes}" "YES")" || {
+        warning "DailyReminderTimes value '${dailyReminderTimes}' is invalid; defaulting to '${defaultDailyReminderTimes}'."
+        normalizedDailyReminderTimes="$(normalizeDailyReminderTimes "${defaultDailyReminderTimes}")"
+    }
+
+    dailyReminderTimes="${normalizedDailyReminderTimes}"
+    parseDailyReminderTimes "${dailyReminderTimes}" >/dev/null 2>&1
+}
+
+function formatDeadlineFromEpoch() {
+    local sourceEpoch="${1}"
+    local requestedFormat="${2}"
+    local formattedDeadline=""
+
+    formattedDeadline=$(formatDateWithLanguageCode "${deadlineFormatLanguageCode}" "%s" "${sourceEpoch}" "${requestedFormat}")
+    if [[ -z "${formattedDeadline}" ]]; then
+        formattedDeadline=$(formatDateWithLanguageCode "${deadlineFormatLanguageCode}" "%s" "${sourceEpoch}" "+%a, %d-%b-%Y, %-l:%M %p")
+    fi
+
+    formattedDeadline="$(trimSurroundingWhitespace "${formattedDeadline}")"
+    echo "${formattedDeadline}"
+}
+
+function deriveRelativeDeadlineTimeFormat() {
+    local deadlineFormat="${1}"
+    local normalizedFormat="${deadlineFormat#+}"
+    local derivedFormat=""
+
+    derivedFormat=$(printf '%s' "${normalizedFormat}" | /usr/bin/perl -ne '
+        if (/(%[-_0^#]*[kKlHIrRTX].*)/) {
+            $value = $1;
+            $prefix = $`;
+            if ($prefix =~ /(%[-_0^#]*[pP][[:space:],;:|\/.-]*)$/) {
+                $value = $1 . $value;
+            }
+            $value =~ s/^[[:space:],;:|\/.-]+//;
+            print "+$value";
+            exit;
+        }
+    ')
+
+    if [[ -z "${derivedFormat}" ]]; then
+        case "${deadlineFormat}" in
+            *%H*|*%k*|*%R*|*%T*) derivedFormat="+%H:%M" ;;
+            *)                   derivedFormat="+%-l:%M %p" ;;
+        esac
+    fi
+
+    echo "${derivedFormat}"
+}
+
+function formatTimeHumanReadableFromEpoch() {
+    local targetEpoch="${1}"
+    local timeHumanReadable=""
+
+    if [[ -z "${targetEpoch}" ]] || ! [[ "${targetEpoch}" =~ ^[0-9]+$ ]]; then
+        return 1
+    fi
+
+    timeHumanReadable=$(formatDateWithLanguageCode "${deadlineFormatLanguageCode}" "%s" "${targetEpoch}" "${relativeDeadlineTimeFormatHumanReadable}")
+    [[ -z "${timeHumanReadable}" ]] && return 1
+
+    timeHumanReadable=${timeHumanReadable// AM/ a.m.}
+    timeHumanReadable=${timeHumanReadable// PM/ p.m.}
+    timeHumanReadable="$(trimSurroundingWhitespace "${timeHumanReadable}")"
+    echo "${timeHumanReadable}"
+}
+
+function formatRelativeDeadlineHumanReadable() {
+    local targetEpoch="${1}"
+    local absoluteFallback="${2}"
+    local targetDate=""
+    local todayDate=""
+    local tomorrowDate=""
+    local targetTime=""
+    local relativeDeadlineHumanReadable=""
+
+    if [[ -n "${targetEpoch}" && "${targetEpoch}" =~ ^[0-9]+$ ]]; then
+        targetDate=$(date -jf "%s" "${targetEpoch}" "+%Y-%m-%d" 2>/dev/null)
+        todayDate=$(date "+%Y-%m-%d")
+        tomorrowDate=$(date -v+1d "+%Y-%m-%d")
+        targetTime=$(formatTimeHumanReadableFromEpoch "${targetEpoch}" 2>/dev/null)
+
+        if [[ -n "${targetDate}" && -n "${targetTime}" ]]; then
+            if [[ "${targetDate}" == "${todayDate}" ]]; then
+                relativeDeadlineHumanReadable="${relativeDeadlineToday}, ${targetTime}"
+            elif [[ "${targetDate}" == "${tomorrowDate}" ]]; then
+                relativeDeadlineHumanReadable="${relativeDeadlineTomorrow}, ${targetTime}"
+            fi
+        fi
+    fi
+
+    [[ -z "${relativeDeadlineHumanReadable}" ]] && relativeDeadlineHumanReadable="${absoluteFallback}"
+    relativeDeadlineHumanReadable="$(trimSurroundingWhitespace "${relativeDeadlineHumanReadable}")"
+    echo "${relativeDeadlineHumanReadable}"
+}
+
+function detectLoggedInUserLanguageCode() {
+    local globalPreferencesPath="${loggedInUserHomeDirectory}/Library/Preferences/.GlobalPreferences.plist"
+    local detectedLanguage=""
+
+    if [[ -r "${globalPreferencesPath}" ]]; then
+        detectedLanguage=$(/usr/libexec/PlistBuddy -c "Print :AppleLanguages:0" "${globalPreferencesPath}" 2>/dev/null)
+    fi
+
+    echo "${detectedLanguage}"
+}
+
+function normalizeDialogLanguageCode() {
+    local languageCode=""
+    local sentinelKey=""
+
+    languageCode="$(sanitizeLanguageCode "${1}")"
+    languageCode="${languageCode%%-*}"
+    languageCode="${languageCode%%_*}"
+
+    [[ "${languageCode}" == "en" ]] && echo "en" && return
+
+    sentinelKey="TitleLocalized_${languageCode}"
+    if [[ "${foundManagedPreferences}" == "true" ]] && /usr/libexec/PlistBuddy -c "Print :${sentinelKey}" "${managedPreferencesPlist}.plist" >/dev/null 2>&1; then
+        echo "${languageCode}"
+        return
+    fi
+
+    if [[ "${foundLocalPreferences}" == "true" ]] && /usr/libexec/PlistBuddy -c "Print :${sentinelKey}" "${localPreferencesPlist}.plist" >/dev/null 2>&1; then
+        echo "${languageCode}"
+        return
+    fi
+
+    echo "en"
+}
+
+function resolveDateFormatDeadlineHumanReadable() {
+    local requestedLanguageCode=""
+    local baseLanguageCode=""
+    local resolvedDialogLanguage=""
+    local exactVariableName=""
+    local baseVariableName=""
+    local exactValue=""
+    local baseValue=""
+    local defaultFormat="+%a, %d-%b-%Y, %-l:%M %p"
+    local resolvedDateFormatSource="built-in default"
+
+    requestedLanguageCode="$(requestedDialogLanguageCode)"
+    baseLanguageCode="$(baseLanguageCodeForCode "${requestedLanguageCode}")"
+    resolvedDialogLanguage="$(normalizeDialogLanguageCode "${requestedLanguageCode}")"
+
+    deadlineFormatLanguageCode="${resolvedDialogLanguage:-en}"
+    if [[ "${preferenceExplicitlySet["dateFormatDeadlineHumanReadable"]}" == "true" ]]; then
+        resolvedDateFormatSource="global preference"
+    fi
+
+    if [[ -n "${requestedLanguageCode}" ]]; then
+        exactVariableName="dateFormatDeadlineHumanReadableLocalized$(languageSuffixForCode "${requestedLanguageCode}")"
+        exactValue="${(P)exactVariableName}"
+
+        if [[ "${preferenceExplicitlySet["${exactVariableName}"]}" == "true" || -n "${exactValue}" ]]; then
+            exactValue="$(trimSurroundingWhitespace "${exactValue}")"
+            if [[ -n "${exactValue}" ]]; then
+                dateFormatDeadlineHumanReadable="${exactValue}"
+                deadlineFormatLanguageCode="${requestedLanguageCode}"
+                resolvedDateFormatSource="exact locale preference (${requestedLanguageCode})"
+            fi
+        fi
+    fi
+
+    if [[ "${deadlineFormatLanguageCode}" == "${resolvedDialogLanguage:-en}" && -n "${baseLanguageCode}" && "${baseLanguageCode}" != "${requestedLanguageCode}" ]]; then
+        baseVariableName="dateFormatDeadlineHumanReadableLocalized$(languageSuffixForCode "${baseLanguageCode}")"
+        baseValue="${(P)baseVariableName}"
+
+        if [[ "${preferenceExplicitlySet["${baseVariableName}"]}" == "true" || -n "${baseValue}" ]]; then
+            baseValue="$(trimSurroundingWhitespace "${baseValue}")"
+            if [[ -n "${baseValue}" ]]; then
+                dateFormatDeadlineHumanReadable="${baseValue}"
+                deadlineFormatLanguageCode="${baseLanguageCode}"
+                resolvedDateFormatSource="base language preference (${baseLanguageCode})"
+            fi
+        fi
+    fi
+
+    dateFormatDeadlineHumanReadable="$(trimSurroundingWhitespace "${dateFormatDeadlineHumanReadable}")"
+    [[ -z "${dateFormatDeadlineHumanReadable}" ]] && dateFormatDeadlineHumanReadable="${defaultFormat}"
+    [[ "${dateFormatDeadlineHumanReadable}" != +* ]] && dateFormatDeadlineHumanReadable="+${dateFormatDeadlineHumanReadable}"
+
+    relativeDeadlineTimeFormatHumanReadable="$(deriveRelativeDeadlineTimeFormat "${dateFormatDeadlineHumanReadable}")"
+    notice "Resolved deadline date format using ${resolvedDateFormatSource}: requested language '${requestedLanguageCode:-auto}', dialog language '${resolvedDialogLanguage:-en}', format language '${deadlineFormatLanguageCode}', absolute format '${dateFormatDeadlineHumanReadable}', relative time format '${relativeDeadlineTimeFormatHumanReadable}'"
+}
+
+function localizedWeekdayName() {
+    local languageCode="${1}"
+    local localeForWeekday=""
+    local localizedWeekday=""
+
+    localeForWeekday="$(localeForDialogLanguageCode "${languageCode}")"
+    if [[ -n "${localeForWeekday}" ]]; then
+        localizedWeekday=$(LC_TIME="${localeForWeekday}" date "+%A" 2>/dev/null)
+    fi
+
+    [[ -z "${localizedWeekday}" ]] && localizedWeekday=$(date "+%A")
+    echo "${localizedWeekday}"
+}
+
+function localizedDurationSeparator() {
+    case "${dialogLanguage}" in
+        ja) echo "、" ;;
+        *)  echo ", " ;;
+    esac
+}
+
+function localizedDurationComponent() {
+    local quantity="${1}"
+    local unit="${2}"
+    local localizedComponent=""
+
+    case "${dialogLanguage}" in
+        de)
+            case "${unit}" in
+                day)    localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "Tag" || echo "Tage")" ;;
+                hour)   localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "Stunde" || echo "Stunden")" ;;
+                minute) localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "Minute" || echo "Minuten")" ;;
+            esac
+            ;;
+        es)
+            case "${unit}" in
+                day)    localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "día" || echo "días")" ;;
+                hour)   localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "hora" || echo "horas")" ;;
+                minute) localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "minuto" || echo "minutos")" ;;
+            esac
+            ;;
+        fr)
+            case "${unit}" in
+                day)    localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "jour" || echo "jours")" ;;
+                hour)   localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "heure" || echo "heures")" ;;
+                minute) localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "minute" || echo "minutes")" ;;
+            esac
+            ;;
+        it)
+            case "${unit}" in
+                day)    localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "giorno" || echo "giorni")" ;;
+                hour)   localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "ora" || echo "ore")" ;;
+                minute) localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "minuto" || echo "minuti")" ;;
+            esac
+            ;;
+        ja)
+            case "${unit}" in
+                day)    localizedComponent="${quantity}日" ;;
+                hour)   localizedComponent="${quantity}時間" ;;
+                minute) localizedComponent="${quantity}分" ;;
+            esac
+            ;;
+        nl)
+            case "${unit}" in
+                day)    localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "dag" || echo "dagen")" ;;
+                hour)   localizedComponent="${quantity} uur" ;;
+                minute) localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "minuut" || echo "minuten")" ;;
+            esac
+            ;;
+        pt)
+            case "${unit}" in
+                day)    localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "dia" || echo "dias")" ;;
+                hour)   localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "hora" || echo "horas")" ;;
+                minute) localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "minuto" || echo "minutos")" ;;
+            esac
+            ;;
+        en|*)
+            case "${unit}" in
+                day)    localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "day" || echo "days")" ;;
+                hour)   localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "hour" || echo "hours")" ;;
+                minute) localizedComponent="${quantity} $([[ "${quantity}" -eq 1 ]] && echo "minute" || echo "minutes")" ;;
+            esac
+            ;;
+    esac
+
+    echo "${localizedComponent}"
+}
+
+function localizedLessThanOneMinute() {
+    case "${dialogLanguage}" in
+        de) echo "weniger als 1 Minute" ;;
+        es) echo "menos de 1 minuto" ;;
+        fr) echo "moins d'une minute" ;;
+        it) echo "meno di 1 minuto" ;;
+        ja) echo "1分未満" ;;
+        nl) echo "minder dan 1 minuut" ;;
+        pt) echo "menos de 1 minuto" ;;
+        en|*) echo "less than 1 minute" ;;
+    esac
+}
+
+function localizedDiskAvailabilitySuffix() {
+    local percentage="${1}"
+
+    case "${dialogLanguage}" in
+        de) echo "(${percentage}% verfügbar)" ;;
+        es) echo "(${percentage}% disponible)" ;;
+        fr) echo "(${percentage}% disponibles)" ;;
+        it) echo "(${percentage}% disponibile)" ;;
+        ja) echo "(${percentage}% 利用可能)" ;;
+        nl) echo "(${percentage}% beschikbaar)" ;;
+        pt) echo "(${percentage}% disponível)" ;;
+        en|*) echo "(${percentage}% available)" ;;
+    esac
+}
+
+function refreshLocalizedRuntimeFacts() {
+    local separator=""
+    local component=""
+    local -a durationComponents=()
+
+    if [[ "${upTimeDays:-0}" =~ ^[0-9]+$ ]] && (( upTimeDays > 0 )); then
+        durationComponents+=( "$(localizedDurationComponent "${upTimeDays}" day)" )
+    fi
+
+    if [[ "${upTimeHoursRemainder:-0}" =~ ^[0-9]+$ ]] && (( upTimeHoursRemainder > 0 )); then
+        durationComponents+=( "$(localizedDurationComponent "${upTimeHoursRemainder}" hour)" )
+    fi
+
+    if [[ "${upTimeMinutesRemainder:-0}" =~ ^[0-9]+$ ]] && (( upTimeMinutesRemainder > 0 )); then
+        durationComponents+=( "$(localizedDurationComponent "${upTimeMinutesRemainder}" minute)" )
+    fi
+
+    if (( ${#durationComponents[@]} > 0 )); then
+        separator="$(localizedDurationSeparator)"
+        uptimeHumanReadable=""
+
+        for component in "${durationComponents[@]}"; do
+            if [[ -n "${uptimeHumanReadable}" ]]; then
+                uptimeHumanReadable="${uptimeHumanReadable}${separator}"
+            fi
+
+            uptimeHumanReadable="${uptimeHumanReadable}${component}"
+        done
+    else
+        uptimeHumanReadable="$(localizedLessThanOneMinute)"
+    fi
+
+    if [[ -n "${freeSpace:-}" && -n "${freePercentage:-}" && "${freePercentage}" != "Unknown" ]]; then
+        diskSpaceHumanReadable="${freeSpace} $(localizedDiskAvailabilitySuffix "${freePercentage}")"
+    else
+        diskSpaceHumanReadable="${freeSpace:-Unknown}"
+    fi
+}
+
+function resolveDialogLanguage() {
+    local normalizedOverride=""
+    local detectedLanguage=""
+
+    if [[ -n "${languageOverride}" && "${languageOverride:l}" != "auto" ]]; then
+        normalizedOverride="$(normalizeDialogLanguageCode "${languageOverride}")"
+        dialogLanguage="${normalizedOverride}"
+        notice "LanguageOverride is '${languageOverride}'; using '${dialogLanguage}'"
+        return
+    fi
+
+    detectedLanguage="$(detectLoggedInUserLanguageCode)"
+    if [[ -z "${detectedLanguage}" ]]; then
+        dialogLanguage="en"
+        notice "Could not detect logged-in user language; defaulting to '${dialogLanguage}'"
+        return
+    fi
+
+    dialogLanguage="$(normalizeDialogLanguageCode "${detectedLanguage}")"
+    notice "Detected logged-in user language '${detectedLanguage}'; using '${dialogLanguage}'"
+}
+
+function applyLocalizedFieldValue() {
+    local baseVariable="${1}"
+    local languageCode="${2}"
+    local localizedSuffix=""
+    local localizedVariable=""
+    local localizedValue=""
+    local baseValue=""
+
+    localizedSuffix="$(languageSuffixForCode "${languageCode}")"
+    localizedVariable="${baseVariable}Localized${localizedSuffix}"
+    localizedValue="${(P)localizedVariable}"
+    baseValue="${(P)baseVariable}"
+
+    # Base values remain shared fallback text; matching localized overrides should
+    # still win when present. Preserve the special InfoButtonText=hide sentinel.
+    if [[ "${baseVariable}" == "infobuttontext" && "${preferenceExplicitlySet["${baseVariable}"]}" == "true" && "${baseValue}" == "hide" ]]; then
+        return
+    fi
+
+    if [[ "${preferenceExplicitlySet["${localizedVariable}"]}" == "true" ]]; then
+        printf -v "${baseVariable}" '%s' "${localizedValue}"
+        return
+    fi
+
+    [[ -n "${localizedValue}" ]] && printf -v "${baseVariable}" '%s' "${localizedValue}"
+}
+
+function initializeLocalizedRuntimeFields() {
+    local runtimeField=""
+    local runtimeFields=("relativeDeadlineToday" "relativeDeadlineTomorrow")
+
+    for runtimeField in "${runtimeFields[@]}"; do
+        applyLocalizedFieldValue "${runtimeField}" "${dialogLanguage}"
+    done
+}
+
+function applyLocalizedDialogText() {
+    local localizedField=""
+    local localizedFields=(
+        "title" "button1text" "button2text" "infobuttontext"
+        "message" "helpmessage"
+        "excessiveUptimeWarningMessage" "diskSpaceWarningMessage"
+        "stagedUpdateMessage" "partiallyStagedUpdateMessage" "pendingDownloadMessage"
+        "supportAssistanceMessage"
+        "updateWord" "upgradeWord"
+        "softwareUpdateButtonTextUpdate" "softwareUpdateButtonTextUpgrade" "restartNowButtonText"
+        "infoboxLabelCurrent" "infoboxLabelRequired" "infoboxLabelDeadline"
+        "infoboxLabelDaysRemaining" "infoboxLabelLastRestart" "infoboxLabelFreeDiskSpace"
+        "deadlineEnforcementMessageAbsolute" "deadlineEnforcementMessageRelative"
+        "preDeadlineThresholdTitle" "preDeadlineThresholdMessage"
+        "aggressiveModeTitle" "aggressiveModeMessage"
+    )
+
+    for localizedField in "${localizedFields[@]}"; do
+        applyLocalizedFieldValue "${localizedField}" "${dialogLanguage}"
+    done
+}
+
+function applyLocalizedUpdateVocabulary() {
+    # Set canonical vocabulary here; explicit lowercase placeholders derive later.
+    if [[ "${updateOrUpgradeMode:l}" == "upgrade" ]]; then
+        titleMessageUpdateOrUpgrade="${upgradeWord}"
+        softwareUpdateButtonText="${softwareUpdateButtonTextUpgrade}"
+    else
+        titleMessageUpdateOrUpgrade="${updateWord}"
+        softwareUpdateButtonText="${softwareUpdateButtonTextUpdate}"
+    fi
+}
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Local Runtime Facts
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function collectUptimeFacts() {
+    local lastBootTime=""
+    local currentTime=""
+
+    lastBootTime=$(sysctl kern.boottime | awk -F'[ |,]' '{print $5}')
+    currentTime=$(date +"%s")
+    upTimeRaw=$(( currentTime - lastBootTime ))
+    upTimeMin=$(( upTimeRaw / 60 ))
+    upTimeDays=$(( upTimeMin / 1440 ))
+    upTimeHoursRemainder=$(( (upTimeMin % 1440) / 60 ))
+    upTimeMinutesRemainder=$(( upTimeMin % 60 ))
+    uptimeHumanReadable=""
+
+    if [[ "${upTimeDays}" -gt 0 ]]; then
+        if [[ "${upTimeDays}" -eq 1 ]]; then
+            uptimeHumanReadable="1 day"
+        else
+            uptimeHumanReadable="${upTimeDays} days"
+        fi
+    fi
+
+    if [[ "${upTimeHoursRemainder}" -gt 0 ]]; then
+        [[ -n "${uptimeHumanReadable}" ]] && uptimeHumanReadable="${uptimeHumanReadable}, "
+
+        if [[ "${upTimeHoursRemainder}" -eq 1 ]]; then
+            uptimeHumanReadable="${uptimeHumanReadable}1 hour"
+        else
+            uptimeHumanReadable="${uptimeHumanReadable}${upTimeHoursRemainder} hours"
+        fi
+    fi
+
+    if [[ "${upTimeMinutesRemainder}" -gt 0 ]]; then
+        [[ -n "${uptimeHumanReadable}" ]] && uptimeHumanReadable="${uptimeHumanReadable}, "
+
+        if [[ "${upTimeMinutesRemainder}" -eq 1 ]]; then
+            uptimeHumanReadable="${uptimeHumanReadable}1 minute"
+        else
+            uptimeHumanReadable="${uptimeHumanReadable}${upTimeMinutesRemainder} minutes"
+        fi
+    fi
+
+    [[ -z "${uptimeHumanReadable}" ]] && uptimeHumanReadable="less than 1 minute"
+}
+
+function collectDiskFacts() {
+    local diskRawValues=""
+    local freeBytes=""
+    local diskBytes=""
+
+    diskRawValues=$(osascript -l JavaScript -e "ObjC.import('Foundation'); var url = \$.NSURL.fileURLWithPath('/'); var result = url.resourceValuesForKeysError(['NSURLVolumeAvailableCapacityForImportantUsageKey','NSURLVolumeTotalCapacityKey'], null); [result.valueForKey('NSURLVolumeAvailableCapacityForImportantUsageKey').js, result.valueForKey('NSURLVolumeTotalCapacityKey').js].join(' ');" 2>/dev/null)
+    read freeBytes diskBytes <<< "${diskRawValues}"
+
+    if [[ "${freeBytes}" == <-> && "${diskBytes}" == <-> ]] && (( freeBytes > 0 && diskBytes >= freeBytes )); then
+        freeSpace=$(echo "scale=1; ${freeBytes} / 1000000000" | bc)
+        freeSpace="${freeSpace} GB"
+        freePercentage=$(echo "scale=2; (${freeBytes} * 100) / ${diskBytes}" | bc)
+    else
+        warning "JXA disk space query returned invalid data; falling back to diskutil. diskBytes=${diskBytes}, freeBytes=${freeBytes}"
+        freeSpace=$(diskutil info / | awk -F ': ' '/Free Space|Available Space|Container Free Space/ {print $2}' | awk -F '(' '{print $1}' | xargs)
+        diskBytes=$(diskutil info / | awk -F '[()]' '/Total Space/ {print $2}' | awk '{print $1}')
+        freeBytes=$(diskutil info / | awk -F '[()]' '/Free Space|Available Space|Container Free Space/ {print $2}' | awk '{print $1}')
+
+        if [[ "${freeBytes}" == <-> && "${diskBytes}" == <-> ]] && (( diskBytes > 0 && diskBytes >= freeBytes )); then
+            freePercentage=$(echo "scale=2; (${freeBytes} * 100) / ${diskBytes}" | bc)
+        else
+            error "Invalid disk space data: diskBytes=${diskBytes}, freeBytes=${freeBytes}"
+            freeSpace="Unknown"
+            freePercentage="Unknown"
+        fi
+    fi
+
+    diskSpaceHumanReadable="${freeSpace} (${freePercentage}% available)"
+}
+
+function collectMachineFacts() {
+    installedmacOSVersion=$(sw_vers -productVersion 2>/dev/null)
+    [[ -z "${installedmacOSVersion}" ]] && installedmacOSVersion="Unknown"
+
+    username="${loggedInUser}"
+    userfullname="${loggedInUserFullname}"
+    osversion="${installedmacOSVersion}"
+
+    computername=$(scutil --get ComputerName 2>/dev/null)
+    [[ -z "${computername}" ]] && computername="$(hostname -s 2>/dev/null)"
+    [[ -z "${computername}" ]] && computername="Unknown"
+
+    serialnumber=$(ioreg -rd1 -c IOPlatformExpertDevice 2>/dev/null | awk -F'"' '/IOPlatformSerialNumber/ {print $4; exit}')
+    [[ -z "${serialnumber}" ]] && serialnumber="Unknown"
+}
+
+function prepareDemoRuntimeState() {
+    local installedMajorVersion=""
+    local installedMinorVersion="0"
+    local installedPatchVersion="0"
+
+    collectUptimeFacts
+    collectDiskFacts
+    collectMachineFacts
+
+    IFS='.' read -r installedMajorVersion installedMinorVersion installedPatchVersion <<< "${installedmacOSVersion}"
+    [[ -z "${installedMajorVersion}" || ! "${installedMajorVersion}" =~ ^[0-9]+$ ]] && installedMajorVersion="15"
+    [[ -z "${installedMinorVersion}" || ! "${installedMinorVersion}" =~ ^[0-9]+$ ]] && installedMinorVersion="0"
+    [[ -z "${installedPatchVersion}" || ! "${installedPatchVersion}" =~ ^[0-9]+$ ]] && installedPatchVersion="0"
+
+    ddmVersionString="${installedMajorVersion}.${installedMinorVersion}.$(( installedPatchVersion + 1 ))"
+    if [[ "${cliAggressiveModePreview}" == "YES" ]]; then
+        aggressiveModeActive="YES"
+        aggressiveModeHoursPastDeadline="${aggressiveModePastDeadlineHours}"
+        deadlineEpoch=$(( $(date +%s) - (aggressiveModeHoursPastDeadline * 3600) ))
+    elif [[ -n "${preDeadlineThresholdMinutes}" ]]; then
+        preDeadlineThresholdReminderMode="YES"
+        deadlineEpoch=$(( $(date +%s) + (preDeadlineThresholdMinutes * 60) ))
+    else
+        deadlineEpoch=$(date -v+7d +%s)
+    fi
+    ddmEnforcedInstallDateEpoch="${deadlineEpoch}"
+    ddmVersionStringDaysRemaining="7"
+    [[ "${preDeadlineThresholdReminderMode}" == "YES" ]] && ddmVersionStringDaysRemaining="0"
+    [[ "${aggressiveModeActive}" == "YES" ]] && ddmVersionStringDaysRemaining="-1"
+    ddmEnforcedInstallDateHumanReadable="$(formatDeadlineFromEpoch "${deadlineEpoch}" "${dateFormatDeadlineHumanReadable}")"
+    ddmEnforcedInstallDateRelativeHumanReadable="$(formatRelativeDeadlineHumanReadable "${deadlineEpoch}" "${ddmEnforcedInstallDateHumanReadable}")"
+    ddmVersionStringDeadlineHumanReadable="${ddmEnforcedInstallDateRelativeHumanReadable:-${ddmEnforcedInstallDateHumanReadable}}"
+    versionComparisonResult="Update Required"
+    hideSecondaryButton="NO"
+    if [[ "${aggressiveModeActive}" == "YES" ]]; then
+        case "${disableButton2InsteadOfHide}" in
+            "YES")
+                hideSecondaryButton="DISABLED"
+                ;;
+            *)
+                hideSecondaryButton="YES"
+                ;;
+        esac
+    fi
+    blurscreen="--noblurscreen"
+    [[ "${aggressiveModeActive}" == "YES" ]] && blurscreen="--blurscreen"
+    updateOrUpgradeMode="update"
+    updateStagingStatus="Fully staged"
+
+    notice "Prepared demo runtime state: required macOS ${ddmVersionString}, deadline ${ddmEnforcedInstallDateHumanReadable}"
+}
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Branding and Dialog Preparation
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function detectDarkMode() {
+    local interfaceStyle=""
+    local globalPreferencesPath="${loggedInUserHomeDirectory}/Library/Preferences/.GlobalPreferences.plist"
+
+    interfaceStyle=$(defaults read "${globalPreferencesPath}" AppleInterfaceStyle 2>/dev/null)
+    if [[ "${interfaceStyle}" == "Dark" ]]; then
+        echo "Dark"
+    else
+        echo "Light"
+    fi
+}
+
+function resolveDialogIconValue() {
+    local sourceValue="${1}"
+    local resolvedValue=""
+
+    if [[ -z "${sourceValue}" ]]; then
+        echo ""
+        return
+    fi
+
+    if [[ -e "${sourceValue}" ]]; then
+        resolvedValue="${sourceValue}"
+    elif [[ "${sourceValue}" =~ ^file:// ]]; then
+        resolvedValue="${sourceValue#file://}"
+        if [[ -e "${resolvedValue}" ]]; then
+            :
+        else
+            resolvedValue=""
+        fi
+    else
+        resolvedValue="${sourceValue}"
+    fi
+
+    echo "${resolvedValue}"
+}
+
+function downloadBrandingAssets() {
+    local appearanceMode="$(detectDarkMode)"
+    local overlayIconURL="${organizationOverlayiconURL}"
+    local majorDDM="${ddmVersionString%%.*}"
+
+    requestedAppearanceMode="${appearanceMode}"
+
+    if [[ "${appearanceMode}" == "Dark" && -n "${organizationOverlayiconURLdark}" ]]; then
+        notice "Dark mode detected; using dark mode overlay icon"
+        overlayIconURL="${organizationOverlayiconURLdark}"
+    else
+        notice "${appearanceMode} mode detected; using standard overlay icon"
+    fi
+
+    if [[ -n "${overlayIconURL}" ]]; then
+        overlayicon="$(resolveDialogIconValue "${overlayIconURL}")"
+        if [[ -n "${overlayicon}" ]]; then
+            info "Resolved overlay icon: ${overlayicon}"
+        else
+            warning "Could not resolve overlay icon from '${overlayIconURL}'; using Finder icon."
+            overlayicon="/System/Library/CoreServices/Finder.app"
+        fi
+    else
+        overlayicon="/System/Library/CoreServices/Finder.app"
+    fi
+
+    case "${majorDDM}" in
+        14) macOSIconURL="https://ics.services.jamfcloud.com/icon/hash_eecee9688d1bc0426083d427d80c9ad48fa118b71d8d4962061d4de8d45747e7" ;;
+        15) macOSIconURL="https://ics.services.jamfcloud.com/icon/hash_0968afcd54ff99edd98ec6d9a418a5ab0c851576b687756dc3004ec52bac704e" ;;
+        26) macOSIconURL="https://ics.services.jamfcloud.com/icon/hash_7320c100c9ca155dc388e143dbc05620907e2d17d6bf74a8fb6d6278ece2c2b4" ;;
+        *)  macOSIconURL="https://ics.services.jamfcloud.com/icon/hash_4555d9dc8fecb4e2678faffa8bdcf43cba110e81950e07a4ce3695ec2d5579ee" ;;
+    esac
+
+    icon="$(resolveDialogIconValue "${macOSIconURL}")"
+    [[ -z "${icon}" ]] && icon="/System/Library/CoreServices/Finder.app"
+
+    if [[ "${swapOverlayAndLogo}" == "YES" ]]; then
+        local tmp="${icon}"
+        icon="${overlayicon}"
+        overlayicon="${tmp}"
+        info "SwapOverlayAndLogo enabled; swapped primary and overlay icons."
+    fi
+
+    info "Using primary icon: ${icon}"
+}
+
+function computeDynamicWarnings() {
+    local allowedUptimeMinutes=$(( daysOfExcessiveUptimeWarning * 1440 ))
+    local belowThreshold=""
+
+    if (( upTimeMin < allowedUptimeMinutes )); then
+        excessiveUptimeWarningMessage=""
+    fi
+
+    if [[ "${freePercentage}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+        belowThreshold=$(echo "${freePercentage} < ${minimumDiskFreePercentage}" | bc)
+        [[ "${belowThreshold}" -ne 1 ]] && diskSpaceWarningMessage=""
+    else
+        warning "freePercentage '${freePercentage}' is not numeric; suppressing disk-space warning."
+        diskSpaceWarningMessage=""
+    fi
+}
+
+function computeUpdateStagingMessage() {
+    if [[ "${hideStagedInfo}" == "YES" ]]; then
+        updateReadyMessage=""
+        return
+    fi
+
+    case "${updateStagingStatus}" in
+        "Fully staged")
+            updateReadyMessage="${stagedUpdateMessage}"
+            ;;
+        "Partially staged")
+            updateReadyMessage="${partiallyStagedUpdateMessage}"
+            ;;
+        "Pending download"|"Not detected")
+            updateReadyMessage="${pendingDownloadMessage}"
+            ;;
+        *)
+            updateReadyMessage=""
+            ;;
+    esac
+}
+
+function computeDeadlineEnforcementMessage() {
+    local markdownColorMinimumVersion="3.0.0.4928"
+    local deadlineDisplay="${ddmEnforcedInstallDateRelativeHumanReadable:-${ddmEnforcedInstallDateHumanReadable}}"
+    local baseDeadlineEnforcementMessage=""
+    local deadlineTemplateVariable="deadlineEnforcementMessageAbsolute"
+
+    deadlineDisplay="$(trimSurroundingWhitespace "${deadlineDisplay}")"
+
+    if [[ "${deadlineDisplay}" != "${ddmEnforcedInstallDateHumanReadable}" ]]; then
+        deadlineTemplateVariable="deadlineEnforcementMessageRelative"
+    fi
+
+    baseDeadlineEnforcementMessage="${(P)deadlineTemplateVariable}"
+    baseDeadlineEnforcementMessage=${baseDeadlineEnforcementMessage//\{deadlineDisplay\}/${deadlineDisplay}}
+    baseDeadlineEnforcementMessage=${baseDeadlineEnforcementMessage//\{titleMessageUpdateOrUpgradeLower\}/${titleMessageUpdateOrUpgrade:l}}
+    baseDeadlineEnforcementMessage=${baseDeadlineEnforcementMessage//\{titleMessageUpdateOrUpgrade\}/${titleMessageUpdateOrUpgrade}}
+
+    dialogVersion="$(${dialogBinary} -v 2>/dev/null)"
+
+    if [[ -n "${dialogVersion}" ]] && is-at-least "${markdownColorMinimumVersion}" "${dialogVersion}"; then
+        dialogSupportsMarkdownColor="YES"
+        deadlineEnforcementMessage=":red[${baseDeadlineEnforcementMessage}]"
+    else
+        dialogSupportsMarkdownColor="NO"
+        deadlineEnforcementMessage="${baseDeadlineEnforcementMessage}"
+    fi
+}
+
+function computeInfoboxHighlights() {
+    infoboxDeadlineDisplay="${ddmEnforcedInstallDateRelativeHumanReadable:-${ddmEnforcedInstallDateHumanReadable:-${ddmVersionStringDeadlineHumanReadable}}}"
+    infoboxDaysRemainingDisplay="${ddmVersionStringDaysRemaining}"
+    infoboxLastRestartDisplay="${uptimeHumanReadable}"
+
+    infoboxDeadlineDisplay="$(trimSurroundingWhitespace "${infoboxDeadlineDisplay}")"
+
+    if [[ "${dialogSupportsMarkdownColor}" != "YES" ]]; then
+        return
+    fi
+
+    if (( upTimeMin >= (daysOfExcessiveUptimeWarning * 1440) )); then
+        infoboxLastRestartDisplay=":red[${infoboxLastRestartDisplay}]"
+    fi
+}
+
+function buildPlaceholderMap() {
+    local preDeadlineThresholdEmphasisOpen=""
+    local preDeadlineThresholdEmphasisClose=""
+
+    if [[ "${dialogSupportsMarkdownColor}" == "YES" ]]; then
+        preDeadlineThresholdEmphasisOpen=":red["
+        preDeadlineThresholdEmphasisClose="]"
+    fi
+
+    declare -gA PLACEHOLDER_MAP=(
+        [weekday]="$(localizedWeekdayName "${dialogLanguage}")"
+        [userfirstname]="${loggedInUserFirstname}"
+        [loggedInUserFirstname]="${loggedInUserFirstname}"
+        [userfullname]="${userfullname}"
+        [username]="${username}"
+        [computername]="${computername}"
+        [serialnumber]="${serialnumber}"
+        [osversion]="${osversion}"
+        [ddmVersionString]="${ddmVersionString}"
+        [ddmEnforcedInstallDateHumanReadable]="${ddmEnforcedInstallDateHumanReadable}"
+        [ddmEnforcedInstallDateRelativeHumanReadable]="${ddmEnforcedInstallDateRelativeHumanReadable}"
+        [installedmacOSVersion]="${installedmacOSVersion}"
+        [ddmVersionStringDeadlineHumanReadable]="${ddmVersionStringDeadlineHumanReadable}"
+        [ddmVersionStringDaysRemaining]="${ddmVersionStringDaysRemaining}"
+        [infoboxDeadlineDisplay]="${infoboxDeadlineDisplay}"
+        [infoboxDaysRemainingDisplay]="${infoboxDaysRemainingDisplay}"
+        [infoboxLastRestartDisplay]="${infoboxLastRestartDisplay}"
+        [titleMessageUpdateOrUpgrade]="${titleMessageUpdateOrUpgrade}"
+        [titleMessageUpdateOrUpgradeLower]="${titleMessageUpdateOrUpgrade:l}"
+        [uptimeHumanReadable]="${uptimeHumanReadable}"
+        [excessiveUptimeWarningMessage]="${excessiveUptimeWarningMessage}"
+        [updateReadyMessage]="${updateReadyMessage}"
+        [diskSpaceHumanReadable]="${diskSpaceHumanReadable}"
+        [diskSpaceWarningMessage]="${diskSpaceWarningMessage}"
+        [softwareUpdateButtonText]="${softwareUpdateButtonText}"
+        [infoboxLabelCurrent]="${infoboxLabelCurrent}"
+        [infoboxLabelRequired]="${infoboxLabelRequired}"
+        [infoboxLabelDeadline]="${infoboxLabelDeadline}"
+        [infoboxLabelDaysRemaining]="${infoboxLabelDaysRemaining}"
+        [infoboxLabelLastRestart]="${infoboxLabelLastRestart}"
+        [infoboxLabelFreeDiskSpace]="${infoboxLabelFreeDiskSpace}"
+        [deadlineEnforcementMessage]="${deadlineEnforcementMessage}"
+        [button1text]="${button1text}"
+        [button2text]="${button2text}"
+        [supportTeamName]="${supportTeamName}"
+        [supportTeamPhone]="${supportTeamPhone}"
+        [supportTeamEmail]="${supportTeamEmail}"
+        [supportTeamWebsite]="${supportTeamWebsite}"
+        [supportKBURL]="${supportKBURL}"
+        [supportKB]="${supportKB}"
+        [supportAssistanceMessage]="${supportAssistanceMessage}"
+        [infobuttonaction]="${infobuttonaction}"
+        [dialogVersion]="${dialogVersion}"
+        [scriptVersion]="${scriptVersion}"
+        [minutesBeforeDeadline]="${preDeadlineThresholdMinutes}"
+        [preDeadlineThresholdEmphasisOpen]="${preDeadlineThresholdEmphasisOpen}"
+        [preDeadlineThresholdEmphasisClose]="${preDeadlineThresholdEmphasisClose}"
+        [aggressiveModeHoursPastDeadline]="${aggressiveModeHoursPastDeadline}"
+        [aggressiveModeFrequencyMinutes]="${aggressiveModeFrequencyMinutes}"
+    )
+}
+
+function replacePlaceholders() {
+    local targetVariable="${1}"
+    local value="${(P)targetVariable}"
+    local lowercaseUpdateOrUpgrade="${titleMessageUpdateOrUpgrade:l}"
+    local previousValue=""
+    local maxPasses=5
+    local pass=0
+
+    # Localization strings should use explicit placeholder names instead of modifiers.
+    # Use {titleMessageUpdateOrUpgrade} for the default/title-case form and
+    # {titleMessageUpdateOrUpgradeLower} when sentence grammar needs lowercase.
+    # Keep legacy {titleMessageUpdateOrUpgrade:l} forms working for older configs.
+    # Keep multiple passes so placeholders embedded in other localized strings still resolve.
+    while (( pass < maxPasses )); do
+        previousValue="${value}"
+        value=${value//\$\{titleMessageUpdateOrUpgrade:l\}/${lowercaseUpdateOrUpgrade}}
+        value=${value//\{titleMessageUpdateOrUpgrade:l\}/${lowercaseUpdateOrUpgrade}}
+
+        for placeholder replaceValue in "${(@kv)PLACEHOLDER_MAP}"; do
+            value=${value//\{${placeholder}\}/${replaceValue}}
+        done
+
+        (( pass++ ))
+        [[ "${value}" == "${previousValue}" ]] && break
+    done
+
+    value="${value//a.m../a.m.}"
+    value="${value//p.m../p.m.}"
+    value="${value//A.M../A.M.}"
+    value="${value//P.M../P.M.}"
+    value="${value//AM../AM.}"
+    value="${value//PM../PM.}"
+
+    printf -v "${targetVariable}" '%s' "${value}"
+}
+
+function removeHelpMessageRowForPlaceholder() {
+    local placeholderName="${1}"
+
+    helpmessage="$(printf "%s" "${helpmessage}" | /usr/bin/perl -0pe '
+        BEGIN { $placeholder = shift @ARGV }
+        s#<br>- [^{}]*\{\Q$placeholder\E\}##g
+    ' "${placeholderName}")"
+}
+
+function removeHelpMessageSupportIntro() {
+    helpmessage="$(printf "%s" "${helpmessage}" | /usr/bin/perl -0pe '
+        s#^.*?(?=<br><br>\*\*[^{}]*\*\*<br>- \*\*[^{}]*\*\*: \{(?:userfullname|username|computername|serialnumber|osversion|dialogVersion|scriptVersion)\})##s
+        s#^(?:<br>)+##
+    ')"
+}
+
+function applySupportFieldVisibility() {
+    local allSupportRowsHidden="YES"
+
+    if [[ "${hideSupportTeamPhone}" == "YES" ]]; then
+        supportTeamPhone=""
+        removeHelpMessageRowForPlaceholder "supportTeamPhone"
+    else
+        allSupportRowsHidden="NO"
+    fi
+
+    if [[ "${hideSupportTeamEmail}" == "YES" ]]; then
+        supportTeamEmail=""
+        removeHelpMessageRowForPlaceholder "supportTeamEmail"
+    else
+        allSupportRowsHidden="NO"
+    fi
+
+    if [[ "${hideSupportTeamWebsite}" == "YES" ]]; then
+        supportTeamWebsite=""
+        removeHelpMessageRowForPlaceholder "supportTeamWebsite"
+    else
+        allSupportRowsHidden="NO"
+    fi
+
+    if [[ "${hideSupportKB}" == "YES" ]]; then
+        supportKB=""
+        supportKBURL=""
+        removeHelpMessageRowForPlaceholder "supportKBURL"
+    else
+        allSupportRowsHidden="NO"
+    fi
+
+    if [[ "${hideSupportAssistanceMessage}" == "YES" || "${infobuttontext}" == "hide" ]]; then
+        supportAssistanceMessage=""
+    fi
+
+    if [[ "${allSupportRowsHidden}" == "YES" && "${helpmessage}" == *"{supportTeamName}"* ]]; then
+        removeHelpMessageSupportIntro
+    fi
+}
+
+function applyHideRules() {
+    case "${infobuttontext}" in
+        "hide")
+            infobuttontext=""
+            ;;
+    esac
+
+    case "${helpimage}" in
+        "hide")
+            helpimage=""
+            ;;
+    esac
+
+    case "${hideSecondaryButton}" in
+        "YES")
+            button2text=""
+            ;;
+    esac
+}
+
+function isPreDeadlineThresholdReminderMode() {
+    [[ "${preDeadlineThresholdReminderMode}" == "YES" ]]
+}
+
+function applyPreDeadlineThresholdDialogOverrides() {
+    isPreDeadlineThresholdReminderMode || return 0
+
+    title="${preDeadlineThresholdTitle}"
+    message="${preDeadlineThresholdMessage}"
+}
+
+function isAggressiveModeActive() {
+    [[ "${aggressiveModeActive}" == "YES" ]]
+}
+
+function applyAggressiveModeDialogOverrides() {
+    isAggressiveModeActive || return 0
+
+    title="${aggressiveModeTitle}"
+    message="${aggressiveModeMessage}"
+    blurscreen="--blurscreen"
+}
+
+function updateRequiredVariables() {
+    dialogBinary="/usr/local/bin/dialog"
+    [[ ! -x "${dialogBinary}" ]] && fatal "swiftDialog not found at '${dialogBinary}'."
+
+    action="x-apple.systempreferences:com.apple.preferences.softwareupdate"
+    downloadBrandingAssets
+    applyLocalizedDialogText
+    applyLocalizedUpdateVocabulary
+    refreshLocalizedRuntimeFacts
+    computeDynamicWarnings
+    computeUpdateStagingMessage
+    computeDeadlineEnforcementMessage
+    computeInfoboxHighlights
+    applyAggressiveModeDialogOverrides
+    applyPreDeadlineThresholdDialogOverrides
+
+    applySupportFieldVisibility
+
+    buildPlaceholderMap
+
+    local textFields=(
+        "title" "button1text" "button2text" "infobuttontext"
+        "infobox" "helpmessage" "helpimage"
+        "excessiveUptimeWarningMessage" "diskSpaceWarningMessage"
+        "message" "supportAssistanceMessage"
+    )
+
+    for field in "${textFields[@]}"; do
+        replacePlaceholders "${field}"
+    done
+
+    applyHideRules
+}
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Debug Output
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function printResolvedPreferenceSummary() {
+    local runtimeNextScheduledReminder=""
+    local runtimeDaemonLastTriggered=""
+
+    preFlight "Preference domain: ${preferenceDomain}"
+    preFlight "Managed preferences: ${managedPreferencesPlist}.plist (${foundManagedPreferences})"
+    preFlight "Local preferences: ${localPreferencesPlist}.plist (${foundLocalPreferences})"
+    preFlight "Daily reminder times: ${dailyReminderTimesResolvedCSV}"
+    preFlight "Pre-deadline minute thresholds: ${minutesBeforeDeadlineReminderScheduleResolvedCSV:-<disabled>}"
+    if [[ "${preDeadlineThresholdReminderMode}" == "YES" ]]; then
+        preFlight "Pre-deadline threshold preview: ${preDeadlineThresholdMinutes} minute(s)"
+    fi
+    if [[ "${aggressiveModeActive}" == "YES" ]]; then
+        preFlight "Aggressive mode preview: ${aggressiveModeHoursPastDeadline} hour(s) past deadline; frequency ${aggressiveModeFrequencyMinutes} minute(s)"
+    fi
+    preFlight "Resolved language: ${dialogLanguage}"
+    preFlight "Detected appearance: ${requestedAppearanceMode}"
+    preFlight "Title: ${title}"
+    preFlight "Primary button: ${button1text}"
+    preFlight "Secondary button: ${button2text:-<hidden>}"
+    preFlight "Info button: ${infobuttontext:-<hidden>}"
+    preFlight "Overlay icon source: ${overlayicon}"
+    preFlight "Main icon source: ${icon}"
+    preFlight "Help image: ${helpimage}"
+    preFlight "Infobox: ${infobox}"
+    preFlight "Message: ${message}"
+
+    if [[ -f "${dorStatePlistPath}" ]]; then
+        preFlight "Runtime state plist: ${dorStatePlistPath}"
+        if validateRuntimeStatePlistForPreview; then
+            runtimeNextScheduledReminder="$(readRuntimeStateValue "NextScheduledReminder")"
+            runtimeDaemonLastTriggered="$(readRuntimeStateValue "DaemonLastTriggered")"
+            preFlight "Runtime NextScheduledReminder: ${runtimeNextScheduledReminder:-<unset>}"
+            preFlight "Runtime DaemonLastTriggered: ${runtimeDaemonLastTriggered:-<unset>}"
+        else
+            preFlight "Runtime NextScheduledReminder: <unavailable>"
+            preFlight "Runtime DaemonLastTriggered: <unavailable>"
+        fi
+    fi
+}
+
+function printDialogArguments() {
+    local arg=""
+
+    preFlight "swiftDialog arguments:"
+    for arg in "${dialogArgs[@]}"; do
+        echo "  ${arg}"
+    done
+}
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Button Actions
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function openDialogAction() {
+    local targetAction="${1}"
+    local actionLabel="${2}"
+
+    if [[ -z "${targetAction}" ]]; then
+        warning "No action configured for '${actionLabel}'."
+        return 1
+    fi
+
+    if open "${targetAction}"; then
+        info "Opened ${actionLabel}: ${targetAction}"
+        return 0
+    fi
+
+    warning "Failed to open ${actionLabel}: ${targetAction}"
+    return 1
+}
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Display Reminder Dialog
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function displayReminderDialog() {
+    dialogArgs=(
+        --title "${title}"
+        --message "${message}"
+        --icon "${icon}"
+        --iconsize 250
+        --overlayicon "${overlayicon}"
+        --infobox "${infobox}"
+        --button1text "${button1text}"
+        --messagefont "size=14"
+        --quitkey "k"
+        --width 800
+        --height 650
+        "${blurscreen}"
+    )
+
+    [[ -n "${button2text}" ]] && dialogArgs+=(--button2text "${button2text}")
+    [[ "${hideSecondaryButton}" == "DISABLED" ]] && dialogArgs+=(--button2disabled)
+    [[ -n "${infobuttontext}" ]] && dialogArgs+=(--infobuttontext "${infobuttontext}")
+    [[ -n "${helpmessage}" ]] && dialogArgs+=(--helpmessage "${helpmessage}")
+    [[ -n "${helpimage}" ]] && dialogArgs+=(--helpimage "${helpimage}")
+
+    printDialogArguments
+
+    "${dialogBinary}" "${dialogArgs[@]}"
+    returncode=$?
+    info "swiftDialog return code: ${returncode}"
+
+    case ${returncode} in
+        0)
+            notice "${loggedInUser} clicked ${button1text}"
+            openDialogAction "${action}" "System Settings Software Update pane"
+            ;;
+        2)
+            notice "${loggedInUser} clicked ${button2text}"
+            info "Preview dismissed via secondary button."
+            ;;
+        3)
+            notice "${loggedInUser} clicked ${infobuttontext}"
+            openDialogAction "${infobuttonaction}" "${infobuttontext:-Info button action}"
+            ;;
+        *)
+            info "No post-dialog action for return code ${returncode}."
+            ;;
+    esac
+}
+
+
+
+####################################################################################################
+#
+# Program
+#
+####################################################################################################
+
+preFlight "\n\n###\n# ${humanReadableScriptName} (${scriptVersion})\n# http://snelson.us/ddm\n###\n"
+preFlight "Initiating …"
+
+if ! loadPreferenceOverrides; then
+    echo
+    echo "⚠️  No Managed or Local preferences were found for '${preferenceDomain}'."
+    echo
+    echo "📍 Expected one of:"
+    echo "  • Managed Preferences: '${managedPreferencesPlist}.plist'"
+    echo "  • Local Preferences: '${localPreferencesPlist}.plist'"
+    echo
+    echo "🔎 If you have already deployed your Configuration Profile, you can preview it using:"
+    echo "  ${rdnnUsage}"
+    echo
+    echo "🧪 Alternatively, you can copy the 'sample.plist' to an expected location:"
+    echo "  cp -v Resources/sample.plist ${localPreferencesPlist}.plist"
+    echo "  ${rerunCommand}"
+    echo
+    echo
+    exit 0
+fi
+
+resolveEffectiveUserContext
+resolveDialogLanguage
+initializeLocalizedRuntimeFields
+resolveDailyReminderTimes
+resolveMinuteThresholdSchedule
+resolveAggressiveModeThreshold
+resolveAggressiveModeFrequency
+prepareDemoRuntimeState
+
+# -------------------------------------------------------------------------
+# Real dialog-display logic begins here; all DDM enforcement logic is
+# intentionally omitted in this preview script.
+# -------------------------------------------------------------------------
+
+updateRequiredVariables
+printResolvedPreferenceSummary
+displayReminderDialog
+
+exit 0

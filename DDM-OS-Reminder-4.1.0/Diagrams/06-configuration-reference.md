@@ -1,0 +1,2572 @@
+# Configuration Reference
+
+Complete reference guide for all configurable preferences in DDM OS Reminder.
+
+## Table of Contents
+
+- [Quick Reference Table](#quick-reference-table)
+- [Configuration by Category](#configuration-by-category)
+  - [Logging & Infrastructure](#1-logging--infrastructure)
+  - [Timing & Thresholds](#2-timing--thresholds)
+  - [Branding & Appearance](#3-branding--appearance)
+  - [Support Team Information](#4-support-team-information)
+  - [Localization & Language Selection](#5-localization--language-selection)
+  - [Dialog UI Text](#6-dialog-ui-text)
+  - [Update Staging Messages](#7-update-staging-messages)
+  - [Warning Messages](#8-warning-messages)
+  - [Dynamic Localization Primitives](#9-dynamic-localization-primitives)
+- [Placeholder Reference](#placeholder-reference)
+- [Missing-DDM Emergency Fallback](#missing-ddm-emergency-fallback)
+- [Common Configuration Scenarios](#common-configuration-scenarios)
+- [Configuration Methods](#configuration-methods)
+- [Troubleshooting](#troubleshooting)
+- [Related Documentation](#related-documentation)
+- [Version History](#version-history)
+
+---
+
+## Quick Reference Table
+
+| Variable | Plist Key | Type | Default | Category |
+|----------|-----------|------|---------|----------|
+| scriptLog | ScriptLog | String | `/var/log/org.churchofjesuschrist.log` | Logging |
+| daysBeforeDeadlineDisplayReminder | DaysBeforeDeadlineDisplayReminder | Integer | 60 | Timing |
+| daysBeforeDeadlineBlurscreen | DaysBeforeDeadlineBlurscreen | Integer | 45 | Timing |
+| daysBeforeDeadlineHidingButton2 | DaysBeforeDeadlineHidingButton2 | Integer | 21 | Timing |
+| daysOfExcessiveUptimeWarning | DaysOfExcessiveUptimeWarning | Integer | 0 | Timing |
+| quietPeriodMinutes | QuietPeriodMinutes | Integer | 76 | Timing |
+| outsideDisplayWindowPeriodicReminderDays | OutsideDisplayWindowPeriodicReminderDays | Integer | 28 | Timing |
+| daysPastDeadlineRestartWorkflow | DaysPastDeadlineRestartWorkflow | Integer | 2 | Timing |
+| pastDeadlineRestartBehavior | PastDeadlineRestartBehavior | String (`Off` \| `Prompt` \| `Force`) | Off | Timing |
+| pastDeadlineRestartMinimumUptimeMinutes | PastDeadlineRestartMinimumUptimeMinutes | Integer | 75 | Timing |
+| pastDeadlineForceTimerSeconds | PastDeadlineForceTimerSeconds | Integer | 60 | Timing |
+| pastDeadlineForceRedisplayDelaySeconds | PastDeadlineForceRedisplayDelaySeconds | Integer | 5 | Timing |
+| meetingDelay | MeetingDelay | Integer | 75 | Timing |
+| dailyReminderTimes | DailyReminderTimes | String (`HH:MM` CSV) | `08:00,12:00,16:00` | Timing |
+| minutesBeforeDeadlineReminderSchedule | MinutesBeforeDeadlineReminderSchedule | String (minute CSV) | `45,30,15,10,5` | Timing |
+| aggressiveModePastDeadlineHours | AggressiveModePastDeadlineHours | Integer | 2 | Timing |
+| aggressiveModeFrequencyMinutes | AggressiveModeFrequencyMinutes | Integer | 20 | Timing |
+| acceptableAssertionApplicationNames | AcceptableAssertionApplicationNames | String | MSTeams zoom.us Webex | Timing |
+| minimumDiskFreePercentage | MinimumDiskFreePercentage | Integer | 99 | Timing |
+| disableButton2InsteadOfHide | DisableButton2InsteadOfHide | Boolean | YES | Timing |
+| organizationOverlayiconURL | OrganizationOverlayIconURL | String | https://use2.ics.services.jamfcloud.com/icon/hash_2d64ce7f0042ad68234a2515211adb067ad6714703dd8ebd6f33c1ab30354b1d | Branding |
+| organizationOverlayiconURLdark | OrganizationOverlayIconURLdark | String | https://use2.ics.services.jamfcloud.com/icon/hash_d3a3bc5e06d2db5f9697f9b4fa095bfecb2dc0d22c71aadea525eb38ff981d39 | Branding |
+| swapOverlayAndLogo | SwapOverlayAndLogo | Boolean | NO | Branding |
+| dateFormatDeadlineHumanReadable | DateFormatDeadlineHumanReadable | String | `+%a, %d-%b-%Y, %-l:%M %p` | Branding |
+| supportTeamName | SupportTeamName | String | IT Support | Support |
+| supportTeamPhone | SupportTeamPhone | String | +1 (801) 555-1212 | Support |
+| hideSupportTeamPhone | HideSupportTeamPhone | Boolean | NO | Support |
+| supportTeamEmail | SupportTeamEmail | String | rescue@domain.org | Support |
+| hideSupportTeamEmail | HideSupportTeamEmail | Boolean | NO | Support |
+| supportTeamWebsite | SupportTeamWebsite | String | https://support.domain.org | Support |
+| hideSupportTeamWebsite | HideSupportTeamWebsite | Boolean | NO | Support |
+| supportKB | SupportKB | String | Update macOS on Mac | Support |
+| hideSupportKB | HideSupportKB | Boolean | NO | Support |
+| infobuttonaction | InfoButtonAction | String | https://support.apple.com/108382 | Support |
+| supportKBURL | SupportKBURL | String | [Markdown link] | Support |
+| supportAssistanceMessage | SupportAssistanceMessage | String | [Support sentence with (?) button] | Support |
+| hideSupportAssistanceMessage | HideSupportAssistanceMessage | Boolean | NO | Support |
+| supportAssistanceMessageLocalizedEn | SupportAssistanceMessageLocalized_en | String | [Localized support sentence] | Localization |
+| supportAssistanceMessageLocalizedDe | SupportAssistanceMessageLocalized_de | String | [Localized support sentence] | Localization |
+| supportAssistanceMessageLocalizedFr | SupportAssistanceMessageLocalized_fr | String | [Localized support sentence] | Localization |
+| supportAssistanceMessageLocalizedEs | SupportAssistanceMessageLocalized_es | String | [Localized support sentence] | Localization |
+| supportAssistanceMessageLocalizedIt | SupportAssistanceMessageLocalized_it | String | [Localized support sentence] | Localization |
+| supportAssistanceMessageLocalizedNl | SupportAssistanceMessageLocalized_nl | String | [Localized support sentence] | Localization |
+| supportAssistanceMessageLocalizedPt | SupportAssistanceMessageLocalized_pt | String | [Localized support sentence] | Localization |
+| supportAssistanceMessageLocalizedJa | SupportAssistanceMessageLocalized_ja | String | [Localized support sentence] | Localization |
+| languageOverride | LanguageOverride | String | auto | Localization |
+| titleLocalizedEn | TitleLocalized_en | String | [Localized title] | Localization |
+| titleLocalizedDe | TitleLocalized_de | String | [Localized title] | Localization |
+| titleLocalizedFr | TitleLocalized_fr | String | [Localized title] | Localization |
+| titleLocalizedEs | TitleLocalized_es | String | [Localized title] | Localization |
+| titleLocalizedIt | TitleLocalized_it | String | [Localized title] | Localization |
+| titleLocalizedNl | TitleLocalized_nl | String | [Localized title] | Localization |
+| titleLocalizedPt | TitleLocalized_pt | String | [Localized title] | Localization |
+| titleLocalizedJa | TitleLocalized_ja | String | [Localized title] | Localization |
+| button1textLocalizedEn | Button1TextLocalized_en | String | [Localized button text] | Localization |
+| button1textLocalizedDe | Button1TextLocalized_de | String | [Localized button text] | Localization |
+| button1textLocalizedFr | Button1TextLocalized_fr | String | [Localized button text] | Localization |
+| button1textLocalizedEs | Button1TextLocalized_es | String | [Localized button text] | Localization |
+| button1textLocalizedIt | Button1TextLocalized_it | String | [Localized button text] | Localization |
+| button1textLocalizedNl | Button1TextLocalized_nl | String | [Localized button text] | Localization |
+| button1textLocalizedPt | Button1TextLocalized_pt | String | [Localized button text] | Localization |
+| button1textLocalizedJa | Button1TextLocalized_ja | String | [Localized button text] | Localization |
+| button2textLocalizedEn | Button2TextLocalized_en | String | [Localized button text] | Localization |
+| button2textLocalizedDe | Button2TextLocalized_de | String | [Localized button text] | Localization |
+| button2textLocalizedFr | Button2TextLocalized_fr | String | [Localized button text] | Localization |
+| button2textLocalizedEs | Button2TextLocalized_es | String | [Localized button text] | Localization |
+| button2textLocalizedIt | Button2TextLocalized_it | String | [Localized button text] | Localization |
+| button2textLocalizedNl | Button2TextLocalized_nl | String | [Localized button text] | Localization |
+| button2textLocalizedPt | Button2TextLocalized_pt | String | [Localized button text] | Localization |
+| button2textLocalizedJa | Button2TextLocalized_ja | String | [Localized button text] | Localization |
+| infobuttontextLocalizedEn | InfoButtonTextLocalized_en | String | [Localized button text] | Localization |
+| infobuttontextLocalizedDe | InfoButtonTextLocalized_de | String | [Localized button text] | Localization |
+| infobuttontextLocalizedFr | InfoButtonTextLocalized_fr | String | [Localized button text] | Localization |
+| infobuttontextLocalizedEs | InfoButtonTextLocalized_es | String | [Localized button text] | Localization |
+| infobuttontextLocalizedIt | InfoButtonTextLocalized_it | String | [Localized button text] | Localization |
+| infobuttontextLocalizedNl | InfoButtonTextLocalized_nl | String | [Localized button text] | Localization |
+| infobuttontextLocalizedPt | InfoButtonTextLocalized_pt | String | [Localized button text] | Localization |
+| infobuttontextLocalizedJa | InfoButtonTextLocalized_ja | String | [Localized button text] | Localization |
+| messageLocalizedEn | MessageLocalized_en | String | [Localized message] | Localization |
+| messageLocalizedDe | MessageLocalized_de | String | [Localized message] | Localization |
+| messageLocalizedFr | MessageLocalized_fr | String | [Localized message] | Localization |
+| messageLocalizedEs | MessageLocalized_es | String | [Localized message] | Localization |
+| messageLocalizedIt | MessageLocalized_it | String | [Localized message] | Localization |
+| messageLocalizedNl | MessageLocalized_nl | String | [Localized message] | Localization |
+| messageLocalizedPt | MessageLocalized_pt | String | [Localized message] | Localization |
+| messageLocalizedJa | MessageLocalized_ja | String | [Localized message] | Localization |
+| helpmessageLocalizedEn | HelpMessageLocalized_en | String | [Localized help message] | Localization |
+| helpmessageLocalizedDe | HelpMessageLocalized_de | String | [Localized help message] | Localization |
+| helpmessageLocalizedFr | HelpMessageLocalized_fr | String | [Localized help message] | Localization |
+| helpmessageLocalizedEs | HelpMessageLocalized_es | String | [Localized help message] | Localization |
+| helpmessageLocalizedIt | HelpMessageLocalized_it | String | [Localized help message] | Localization |
+| helpmessageLocalizedNl | HelpMessageLocalized_nl | String | [Localized help message] | Localization |
+| helpmessageLocalizedPt | HelpMessageLocalized_pt | String | [Localized help message] | Localization |
+| helpmessageLocalizedJa | HelpMessageLocalized_ja | String | [Localized help message] | Localization |
+| excessiveUptimeWarningMessageLocalizedEn | ExcessiveUptimeWarningMessageLocalized_en | String | [Localized warning] | Localization |
+| excessiveUptimeWarningMessageLocalizedDe | ExcessiveUptimeWarningMessageLocalized_de | String | [Localized warning] | Localization |
+| excessiveUptimeWarningMessageLocalizedFr | ExcessiveUptimeWarningMessageLocalized_fr | String | [Localized warning] | Localization |
+| excessiveUptimeWarningMessageLocalizedEs | ExcessiveUptimeWarningMessageLocalized_es | String | [Localized warning] | Localization |
+| excessiveUptimeWarningMessageLocalizedIt | ExcessiveUptimeWarningMessageLocalized_it | String | [Localized warning] | Localization |
+| excessiveUptimeWarningMessageLocalizedNl | ExcessiveUptimeWarningMessageLocalized_nl | String | [Localized warning] | Localization |
+| excessiveUptimeWarningMessageLocalizedPt | ExcessiveUptimeWarningMessageLocalized_pt | String | [Localized warning] | Localization |
+| excessiveUptimeWarningMessageLocalizedJa | ExcessiveUptimeWarningMessageLocalized_ja | String | [Localized warning] | Localization |
+| diskSpaceWarningMessageLocalizedEn | DiskSpaceWarningMessageLocalized_en | String | [Localized warning] | Localization |
+| diskSpaceWarningMessageLocalizedDe | DiskSpaceWarningMessageLocalized_de | String | [Localized warning] | Localization |
+| diskSpaceWarningMessageLocalizedFr | DiskSpaceWarningMessageLocalized_fr | String | [Localized warning] | Localization |
+| diskSpaceWarningMessageLocalizedEs | DiskSpaceWarningMessageLocalized_es | String | [Localized warning] | Localization |
+| diskSpaceWarningMessageLocalizedIt | DiskSpaceWarningMessageLocalized_it | String | [Localized warning] | Localization |
+| diskSpaceWarningMessageLocalizedNl | DiskSpaceWarningMessageLocalized_nl | String | [Localized warning] | Localization |
+| diskSpaceWarningMessageLocalizedPt | DiskSpaceWarningMessageLocalized_pt | String | [Localized warning] | Localization |
+| diskSpaceWarningMessageLocalizedJa | DiskSpaceWarningMessageLocalized_ja | String | [Localized warning] | Localization |
+| stagedUpdateMessageLocalizedEn | StagedUpdateMessageLocalized_en | String | [Localized staging message] | Localization |
+| stagedUpdateMessageLocalizedDe | StagedUpdateMessageLocalized_de | String | [Localized staging message] | Localization |
+| stagedUpdateMessageLocalizedFr | StagedUpdateMessageLocalized_fr | String | [Localized staging message] | Localization |
+| stagedUpdateMessageLocalizedEs | StagedUpdateMessageLocalized_es | String | [Localized staging message] | Localization |
+| stagedUpdateMessageLocalizedIt | StagedUpdateMessageLocalized_it | String | [Localized staging message] | Localization |
+| stagedUpdateMessageLocalizedNl | StagedUpdateMessageLocalized_nl | String | [Localized staging message] | Localization |
+| stagedUpdateMessageLocalizedPt | StagedUpdateMessageLocalized_pt | String | [Localized staging message] | Localization |
+| stagedUpdateMessageLocalizedJa | StagedUpdateMessageLocalized_ja | String | [Localized staging message] | Localization |
+| partiallyStagedUpdateMessageLocalizedEn | PartiallyStagedUpdateMessageLocalized_en | String | [Localized staging message] | Localization |
+| partiallyStagedUpdateMessageLocalizedDe | PartiallyStagedUpdateMessageLocalized_de | String | [Localized staging message] | Localization |
+| partiallyStagedUpdateMessageLocalizedFr | PartiallyStagedUpdateMessageLocalized_fr | String | [Localized staging message] | Localization |
+| partiallyStagedUpdateMessageLocalizedEs | PartiallyStagedUpdateMessageLocalized_es | String | [Localized staging message] | Localization |
+| partiallyStagedUpdateMessageLocalizedIt | PartiallyStagedUpdateMessageLocalized_it | String | [Localized staging message] | Localization |
+| partiallyStagedUpdateMessageLocalizedNl | PartiallyStagedUpdateMessageLocalized_nl | String | [Localized staging message] | Localization |
+| partiallyStagedUpdateMessageLocalizedPt | PartiallyStagedUpdateMessageLocalized_pt | String | [Localized staging message] | Localization |
+| partiallyStagedUpdateMessageLocalizedJa | PartiallyStagedUpdateMessageLocalized_ja | String | [Localized staging message] | Localization |
+| pendingDownloadMessageLocalizedEn | PendingDownloadMessageLocalized_en | String | [Localized staging message] | Localization |
+| pendingDownloadMessageLocalizedDe | PendingDownloadMessageLocalized_de | String | [Localized staging message] | Localization |
+| pendingDownloadMessageLocalizedFr | PendingDownloadMessageLocalized_fr | String | [Localized staging message] | Localization |
+| pendingDownloadMessageLocalizedEs | PendingDownloadMessageLocalized_es | String | [Localized staging message] | Localization |
+| pendingDownloadMessageLocalizedIt | PendingDownloadMessageLocalized_it | String | [Localized staging message] | Localization |
+| pendingDownloadMessageLocalizedNl | PendingDownloadMessageLocalized_nl | String | [Localized staging message] | Localization |
+| pendingDownloadMessageLocalizedPt | PendingDownloadMessageLocalized_pt | String | [Localized staging message] | Localization |
+| pendingDownloadMessageLocalizedJa | PendingDownloadMessageLocalized_ja | String | [Localized staging message] | Localization |
+| hideStagedInfo | HideStagedUpdateInfo | Boolean | NO | Localization |
+| relativeDeadlineToday | RelativeDeadlineToday | String | Today | Localization |
+| relativeDeadlineToday_{lang} | RelativeDeadlineTodayLocalized_{lang} | String | [Localized phrase] | Localization |
+| relativeDeadlineTomorrow | RelativeDeadlineTomorrow | String | Tomorrow | Localization |
+| relativeDeadlineTomorrow_{lang} | RelativeDeadlineTomorrowLocalized_{lang} | String | [Localized phrase] | Localization |
+| updateWord | UpdateWord | String | Update | Localization |
+| updateWord_{lang} | UpdateWordLocalized_{lang} | String | [Localized word] | Localization |
+| upgradeWord | UpgradeWord | String | Upgrade | Localization |
+| upgradeWord_{lang} | UpgradeWordLocalized_{lang} | String | [Localized word] | Localization |
+| softwareUpdateButtonTextUpdate | SoftwareUpdateButtonTextUpdate | String | Restart Now | Localization |
+| softwareUpdateButtonTextUpdate_{lang} | SoftwareUpdateButtonTextUpdateLocalized_{lang} | String | [Localized button] | Localization |
+| softwareUpdateButtonTextUpgrade | SoftwareUpdateButtonTextUpgrade | String | Upgrade Now | Localization |
+| softwareUpdateButtonTextUpgrade_{lang} | SoftwareUpdateButtonTextUpgradeLocalized_{lang} | String | [Localized button] | Localization |
+| restartNowButtonText | RestartNowButtonText | String | Restart Now | Localization |
+| restartNowButtonText_{lang} | RestartNowButtonTextLocalized_{lang} | String | [Localized button] | Localization |
+| infoboxLabelCurrent | InfoboxLabelCurrent | String | Current | Localization |
+| infoboxLabelCurrent_{lang} | InfoboxLabelCurrentLocalized_{lang} | String | [Localized label] | Localization |
+| infoboxLabelRequired | InfoboxLabelRequired | String | Required | Localization |
+| infoboxLabelRequired_{lang} | InfoboxLabelRequiredLocalized_{lang} | String | [Localized label] | Localization |
+| infoboxLabelDeadline | InfoboxLabelDeadline | String | Deadline | Localization |
+| infoboxLabelDeadline_{lang} | InfoboxLabelDeadlineLocalized_{lang} | String | [Localized label] | Localization |
+| infoboxLabelDaysRemaining | InfoboxLabelDaysRemaining | String | Day(s) Remaining | Localization |
+| infoboxLabelDaysRemaining_{lang} | InfoboxLabelDaysRemainingLocalized_{lang} | String | [Localized label] | Localization |
+| infoboxLabelLastRestart | InfoboxLabelLastRestart | String | Last Restart | Localization |
+| infoboxLabelLastRestart_{lang} | InfoboxLabelLastRestartLocalized_{lang} | String | [Localized label] | Localization |
+| infoboxLabelFreeDiskSpace | InfoboxLabelFreeDiskSpace | String | Free Disk Space | Localization |
+| infoboxLabelFreeDiskSpace_{lang} | InfoboxLabelFreeDiskSpaceLocalized_{lang} | String | [Localized label] | Localization |
+| deadlineEnforcementMessageAbsolute | DeadlineEnforcementMessageAbsolute | String | [Deadline sentence w/ date] | Localization |
+| deadlineEnforcementMessageAbsolute_{lang} | DeadlineEnforcementMessageAbsoluteLocalized_{lang} | String | [Localized deadline sentence] | Localization |
+| deadlineEnforcementMessageRelative | DeadlineEnforcementMessageRelative | String | [Deadline sentence w/ Today/Tomorrow] | Localization |
+| deadlineEnforcementMessageRelative_{lang} | DeadlineEnforcementMessageRelativeLocalized_{lang} | String | [Localized deadline sentence] | Localization |
+| preDeadlineThresholdTitle | PreDeadlineThresholdTitle | String | macOS Update Deadline Soon | Localization |
+| preDeadlineThresholdTitle_{lang} | PreDeadlineThresholdTitleLocalized_{lang} | String | [Localized title] | Localization |
+| preDeadlineThresholdMessage | PreDeadlineThresholdMessage | String | [Final-minute reminder body] | Localization |
+| preDeadlineThresholdMessage_{lang} | PreDeadlineThresholdMessageLocalized_{lang} | String | [Localized message] | Localization |
+| pastDeadlinePromptTitle | PastDeadlinePromptTitle | String | Restart Your Mac | Localization |
+| pastDeadlinePromptTitle_{lang} | PastDeadlinePromptTitleLocalized_{lang} | String | [Localized title] | Localization |
+| pastDeadlinePromptMessage | PastDeadlinePromptMessage | String | [Restart prompt message] | Localization |
+| pastDeadlinePromptMessage_{lang} | PastDeadlinePromptMessageLocalized_{lang} | String | [Localized message] | Localization |
+| pastDeadlineForceTitle | PastDeadlineForceTitle | String | Your Mac is restarting | Localization |
+| pastDeadlineForceTitle_{lang} | PastDeadlineForceTitleLocalized_{lang} | String | [Localized title] | Localization |
+| pastDeadlineForceMessage | PastDeadlineForceMessage | String | [Force restart message] | Localization |
+| pastDeadlineForceMessage_{lang} | PastDeadlineForceMessageLocalized_{lang} | String | [Localized message] | Localization |
+| title | Title | String | macOS {placeholder} Required | UI Text |
+| button1text | Button1Text | String | Open Software Update | UI Text |
+| button2text | Button2Text | String | Remind Me Later | UI Text |
+| infobuttontext | InfoButtonText | String | Update macOS on Mac | UI Text |
+| excessiveUptimeWarningMessage | ExcessiveUptimeWarningMessage | String | [HTML message] | UI Text |
+| diskSpaceWarningMessage | DiskSpaceWarningMessage | String | [HTML message] | UI Text |
+| stagedUpdateMessage | StagedUpdateMessage | String | [HTML message] | Staging |
+| partiallyStagedUpdateMessage | PartiallyStagedUpdateMessage | String | [HTML message] | Staging |
+| pendingDownloadMessage | PendingDownloadMessage | String | [HTML message] | Staging |
+| hideStagedInfo | HideStagedUpdateInfo | Boolean | NO | Staging |
+| message | Message | String | [Full dialog message] | UI Text |
+| infobox | InfoBox | String | [System info display] | UI Text |
+| helpmessage | HelpMessage | String | [Support contact info] | UI Text |
+| helpimage | HelpImage | String | qr={infobuttonaction} | UI Text |
+
+**Note**: The **Variable** column shows internal script variable names; configure values using the **Plist Key** column in your profile/plist.
+
+The sample profile in `Resources/sample.plist` uses shorter timing values (for example, 14/3/1 days) intentionally for demo-friendly behavior and does not reflect script defaults. Managed or local preferences override the script defaults in production.
+
+Runtime-only scheduler keys such as `NextScheduledReminder` and `DaemonLastTriggered` are intentionally excluded from this table because they live in `/Library/Management/<rdnn>/dor-state.plist`, not in the managed/local preference payload.
+Pre-deadline threshold delivery keys are also runtime-only and must not be deployed through managed/local preferences.
+
+## Missing-DDM Emergency Fallback
+
+`/Library/Management/<rdnn>/dor-fallback-declaration.plist` is deployment-owned emergency configuration, not a preference payload and not scheduler state. Jamf Pro Script Parameter 5 supplies `VersionString`; Parameter 6 supplies timezone-bearing `EnforcedInstallDate`.
+
+Required schema: integer `SchemaVersion=1`; string `VersionString`; string `BuildVersionString=(null)`; string `EnforcedInstallDate`; string `Source=JamfProScriptParameters`.
+
+Runtime precedence is confirmed DDM declaration, then fallback only when resolver status is exactly `missing`. Resolver states `conflict`, `noMatch`, and `invalidVersion` remain ineligible and suppress reminders. Do not add these keys to managed/local preferences, `Resources/sample.plist`, or `dor-state.plist`.
+
+Fallback uses the existing threshold signature `<version>|(null)|<effective-deadline-epoch>`, so changing its version or deadline resets threshold delivery state through existing scheduler behavior. Past fallback deadlines bypass Apple padded-date lookup and use the supplied timestamp directly.
+
+---
+
+## Configuration by Category
+
+### 1. Logging & Infrastructure
+
+#### scriptLog
+**Plist Key**: `ScriptLog`
+**Type**: String
+**Default**: `/var/log/org.churchofjesuschrist.log`
+
+**Description**: Path to the client-side log file where all script activity is recorded.
+
+**Recommendation**: Change to match your organization's RDNN (e.g., `/var/log/com.company.log`)
+
+**Script Default**:
+```bash
+["scriptLog"]="string|/var/log/org.churchofjesuschrist.log"
+```
+
+**Configuration Profile**:
+```xml
+<key>ScriptLog</key>
+<string>/var/log/com.company.log</string>
+```
+
+**Local Preference**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    ScriptLog -string "/var/log/com.company.log"
+```
+
+**Log Rotation**: Automatically rotates when exceeds 10MB
+
+---
+
+### 2. Timing & Thresholds
+
+#### daysBeforeDeadlineDisplayReminder
+**Plist Key**: `DaysBeforeDeadlineDisplayReminder`
+**Type**: Integer
+**Default**: 60
+**Valid Range**: 0-999
+
+**Description**: Number of days before the DDM deadline when reminders should start appearing to users.
+
+**Impact**:
+- Users see no reminders if outside this window
+- Too high = reminder fatigue
+- Too low = insufficient warning time
+
+**Recommendations**:
+- **Conservative**: 30 days
+- **Balanced**: 60 days (default)
+- **Aggressive**: 90 days
+
+**Script Default**:
+```bash
+["daysBeforeDeadlineDisplayReminder"]="numeric|60"
+```
+
+**Configuration Profile**:
+```xml
+<key>DaysBeforeDeadlineDisplayReminder</key>
+<integer>60</integer>
+```
+
+**Local Preference**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    DaysBeforeDeadlineDisplayReminder -int 60
+```
+
+**Related**: See [Deadline Timeline](03-deadline-timeline.md) for visual representation
+
+---
+
+#### daysBeforeDeadlineBlurscreen
+**Plist Key**: `DaysBeforeDeadlineBlurscreen`
+**Type**: Integer
+**Default**: 45
+**Valid Range**: 0-999
+
+**Description**: Number of days before deadline when the blurscreen effect activates, dimming the desktop background to increase visual urgency.
+
+**Impact**:
+- Blurscreen significantly increases user attention
+- Creates medium-urgency phase
+- Balance between annoying and effective
+
+**Recommendations**:
+- **Conservative**: 14 days
+- **Balanced**: 45 days (default)
+- **Aggressive**: 60 days
+
+**Must Be Less Than**: `daysBeforeDeadlineDisplayReminder`
+
+**Script Default**:
+```bash
+["daysBeforeDeadlineBlurscreen"]="numeric|45"
+```
+
+**Configuration Profile**:
+```xml
+<key>DaysBeforeDeadlineBlurscreen</key>
+<integer>45</integer>
+```
+
+**Visual Example**: See [Deadline Timeline Phase 3](03-deadline-timeline.md#phase-3-blurscreen-warnings-escalating-urgency)
+
+---
+
+#### daysBeforeDeadlineHidingButton2
+**Plist Key**: `DaysBeforeDeadlineHidingButton2`
+**Type**: Integer
+**Default**: 21
+**Valid Range**: 0-999
+
+**Description**: Number of days before deadline when the "Remind Me Later" button (Button 2) becomes disabled or hidden, forcing users to either update or close the dialog.
+
+**Impact**:
+- Removes user's ability to postpone
+- Creates high-urgency phase
+- Should be close to deadline
+
+**Recommendations**:
+- **Conservative**: 7 days
+- **Balanced**: 21 days (default)
+- **Aggressive**: 30 days
+
+**Must Be Less Than**: `daysBeforeDeadlineBlurscreen`
+
+**Related Preference**: `DisableButton2InsteadOfHide` controls presentation:
+- `YES` = Button appears greyed out (disabled)
+- `NO` = Button hidden completely
+
+**Script Default**:
+```bash
+["daysBeforeDeadlineHidingButton2"]="numeric|21"
+```
+
+**Configuration Profile**:
+```xml
+<key>DaysBeforeDeadlineHidingButton2</key>
+<integer>21</integer>
+```
+
+---
+
+#### quietPeriodMinutes
+**Plist Key**: `QuietPeriodMinutes`
+**Type**: Integer
+**Default**: 76
+**Valid Range**: 0-999
+
+**Description**: Minutes after a user interaction during which normal update-focused reminders are suppressed. Due pre-deadline threshold reminders, aggressive mode, and Force mode bypass this quiet period.
+
+**Behavior**:
+- Interaction return codes `0|2|3|4|10` can start quiet-period suppression
+- If a daemon-managed run exits because the quiet period is still active, `NextScheduledReminder` is written as the quiet-period expiry (`lastInteraction + QuietPeriodMinutes`) unless an earlier pre-deadline threshold is pending
+- `Open Software Update` (`Return Code: 0`) normally returns to `DailyReminderTimes` baseline cadence after the dialog, but a later baseline run inside the quiet period can still be suppressed and exact-scheduled to the quiet-period expiry
+
+**Special Value**: `0` disables quiet-period suppression.
+
+---
+
+#### outsideDisplayWindowPeriodicReminderDays
+**Plist Key**: `OutsideDisplayWindowPeriodicReminderDays`
+**Type**: Integer
+**Default**: 28
+**Valid Range**: 0-999
+
+**Description**: Days between repeat reminders while the deadline is still outside `DaysBeforeDeadlineDisplayReminder`, after an initial reminder interaction has already happened.
+
+**Special Value**: `0` disables repeat reminders outside the display window after first interaction.
+
+---
+
+#### disableButton2InsteadOfHide
+**Plist Key**: `DisableButton2InsteadOfHide`
+**Type**: Boolean
+**Default**: YES
+
+**Description**: Controls whether Button 2 is disabled or hidden once `DaysBeforeDeadlineHidingButton2` is reached.
+
+**Values**:
+- `YES`: show Button 2 greyed out
+- `NO`: hide Button 2 completely
+
+**Visual Example**: See [Deadline Timeline Phase 4](03-deadline-timeline.md#phase-4-urgentcritical-deadline-imminent)
+
+---
+
+#### daysOfExcessiveUptimeWarning
+**Plist Key**: `DaysOfExcessiveUptimeWarning`
+**Type**: Integer
+**Default**: 0 (immediate)
+**Valid Range**: 0-999
+
+**Description**: Number of days without restart that triggers an uptime warning message in the dialog, recommending user restart before updating.
+
+**Impact**:
+- Warns users with stale system state
+- Improves update reliability
+- 0 = immediate warning trigger (any uptime)
+
+**Recommendations**:
+- **Validation / always warn**: 0 (default)
+- **Moderate**: 7 days
+- **Strict**: 3 days
+
+**Script Default**:
+```bash
+["daysOfExcessiveUptimeWarning"]="numeric|0"
+```
+
+**Configuration Profile**:
+```xml
+<key>DaysOfExcessiveUptimeWarning</key>
+<integer>7</integer>
+```
+
+**Warning Message Variable**: `excessiveUptimeWarningMessage`
+
+---
+
+#### daysPastDeadlineRestartWorkflow
+**Plist Key**: `DaysPastDeadlineRestartWorkflow`
+**Type**: Integer
+**Default**: 2
+**Valid Range**: 0-999
+
+**Description**: Number of whole days past the DDM enforcement deadline required before Yukon Cornelius restart workflow becomes eligible.
+
+**Impact**:
+- 2 = eligible after two full days past deadline (default)
+- Higher values delay restart workflow activation
+- Applies only when `pastDeadlineRestartBehavior` is not `Off`
+
+**Script Default**:
+```bash
+["daysPastDeadlineRestartWorkflow"]="numeric|2"
+```
+
+**Configuration Profile**:
+```xml
+<key>DaysPastDeadlineRestartWorkflow</key>
+<integer>2</integer>
+```
+
+---
+
+#### pastDeadlineRestartBehavior
+**Plist Key**: `PastDeadlineRestartBehavior`
+**Type**: String enum
+**Default**: `Off`
+**Valid Values**: `Off` | `Prompt` | `Force` (case-insensitive)
+
+**Description**: Controls what happens after the DDM deadline when restart workflow eligibility is met (`daysPastDeadlineRestartWorkflow` and minimum uptime checks pass).
+
+**Mode Behavior**:
+- `Off`: Keep normal update-focused reminder behavior
+- `Prompt`: Shift to restart-only dialog (button1 = Restart Now), but allow normal dismissal behavior
+- `Force`: Shift to restart-only dialog with a configurable timer; timeout triggers restart, and non-restart dismissals are re-shown in the same run until restart
+
+**Eligibility Requirements**:
+- The Mac still requires the enforced macOS update/upgrade
+- The DDM enforcement deadline has passed
+- Days past deadline are greater than or equal to `daysPastDeadlineRestartWorkflow`
+- Current uptime is at least `PastDeadlineRestartMinimumUptimeMinutes`
+
+**Script Default**:
+```bash
+["pastDeadlineRestartBehavior"]="string|Off"
+```
+
+**Configuration Profile**:
+```xml
+<key>PastDeadlineRestartBehavior</key>
+<string>Off</string>
+```
+
+**Local Preference**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    PastDeadlineRestartBehavior -string "Prompt"
+```
+
+---
+
+#### pastDeadlineRestartMinimumUptimeMinutes
+**Plist Key**: `PastDeadlineRestartMinimumUptimeMinutes`
+**Type**: Integer
+**Default**: 75
+**Valid Range**: 0-999
+
+**Description**: Minimum current uptime required before `Prompt` or `Force` restart workflow can become active after the day threshold is met. `0` allows restart workflow eligibility immediately after reboot when other conditions pass.
+
+---
+
+#### pastDeadlineForceTimerSeconds
+**Plist Key**: `PastDeadlineForceTimerSeconds`
+**Type**: Integer
+**Default**: 60
+**Valid Range**: 1-999
+
+**Description**: Countdown seconds passed to swiftDialog `--timer` in `Force` restart mode. Invalid values and `0` fall back to `60`.
+
+---
+
+#### pastDeadlineForceRedisplayDelaySeconds
+**Plist Key**: `PastDeadlineForceRedisplayDelaySeconds`
+**Type**: Integer
+**Default**: 5
+**Valid Range**: 1-999
+
+**Description**: Pause before the Force-mode dialog is shown again after a non-restart dismissal or unexpected return code. Invalid values and `0` fall back to `5`.
+
+---
+
+#### aggressiveModePastDeadlineHours
+**Plist Key**: `AggressiveModePastDeadlineHours`
+**Type**: Integer
+**Default**: 2
+**Valid Range**: 0-999
+
+**Description**: Number of whole hours past the effective DDM enforcement deadline required before aggressive mode becomes eligible while the Mac still needs the enforced update/upgrade.
+
+**Behavior**:
+- `2` = aggressive mode starts after two hours past the effective deadline (default)
+- `0` = eligible as soon as the effective deadline is past
+- High values such as `720` effectively suppress aggressive mode without changing post-deadline restart policy
+- Do not set this too low in production unless the organization intentionally wants near-immediate post-deadline escalation
+- `/Library/Management/<rdnn>/dor-aggressive-kill` suppresses aggressive mode for support assistance and returns to normal non-aggressive cadence
+
+**Script Default**:
+```bash
+["aggressiveModePastDeadlineHours"]="numeric|2"
+```
+
+**Configuration Profile**:
+```xml
+<key>AggressiveModePastDeadlineHours</key>
+<integer>2</integer>
+```
+
+**Local Preference**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    AggressiveModePastDeadlineHours -int 2
+```
+
+---
+
+#### aggressiveModeFrequencyMinutes
+**Plist Key**: `AggressiveModeFrequencyMinutes`
+**Type**: Integer
+**Default**: 20
+**Valid Range**: 1-999
+
+**Description**: Exact redisplay interval, in minutes, used after an aggressive-mode dismissal, close, keyboard quit, or timer return code.
+
+**Behavior**:
+- Starter-launched runs write `NextScheduledReminder` to `/Library/Management/<rdnn>/dor-state.plist`
+- Exact next reminder is `now + AggressiveModeFrequencyMinutes * 60`
+- Direct, manual, and demo runs do not mutate daemon scheduler state
+- Invalid values and `0` fall back to `20` with warning logging
+- `Open Software Update` keeps exact aggressive-mode redisplay scheduling until compliance or support suppression
+
+**Script Default**:
+```bash
+["aggressiveModeFrequencyMinutes"]="numeric|20"
+```
+
+**Configuration Profile**:
+```xml
+<key>AggressiveModeFrequencyMinutes</key>
+<integer>20</integer>
+```
+
+**Local Preference**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    AggressiveModeFrequencyMinutes -int 20
+```
+
+---
+
+#### meetingDelay
+**Plist Key**: `MeetingDelay`
+**Type**: Integer
+**Default**: 75
+**Valid Range**: 0-999 (minutes)
+
+**Description**: Number of minutes to delay dialog display when user has active display sleep assertions (detected via `pmset`), typically indicating a video call or presentation.
+
+**Impact**:
+- Respects user's focus time
+- Prevents interruption during meetings
+- Script will retry after delay period
+
+**Recommendations**:
+- **Short meetings**: 30-45 minutes
+- **Standard meetings**: 75 minutes (default)
+- **Extended meetings**: 120 minutes
+
+**Exception**: Ignored when less than 24 hours remain until deadline
+
+**Script Default**:
+```bash
+["meetingDelay"]="numeric|75"
+```
+
+**Configuration Profile**:
+```xml
+<key>MeetingDelay</key>
+<integer>75</integer>
+```
+
+**Related Logic**: See [Runtime Decision Tree - Meeting Detection](02-runtime-decision-tree.md#8-meeting-detection)
+
+---
+
+#### dailyReminderTimes
+**Plist Key**: `DailyReminderTimes`
+**Type**: String
+**Default**: `08:00,12:00,16:00`
+**Valid Format**: `HH:MM,HH:MM,HH:MM` (24-hour local time CSV)
+
+**Description**: Admin-controlled baseline reminder slots used by the heartbeat `LaunchDaemon` and `dor-starter.zsh` to decide when a normal reminder is due.
+
+**Behavior**:
+- Values are interpreted in the Mac's local time zone
+- Entries are normalized, sorted, and de-duplicated by runtime
+- Invalid entries are ignored with warning logging; fully invalid values fall back to script default
+- Baseline scheduling uses this list when reminder flow returns to normal cadence, including after `Open Software Update`
+- A baseline run can still be suppressed by `QuietPeriodMinutes`; in that case the runtime scheduler stores an exact quiet-period expiry in `NextScheduledReminder`
+- A reboot does not bypass a future `NextScheduledReminder`; `RunAtLoad` checks `dor-state.plist` and exits until the stored due time
+
+**Examples**:
+- `08:00,12:00,16:00` = morning, midday, afternoon reminders
+- `09:00,13:00,17:00` = standard business-hours cadence
+- `08:30,11:30,14:30,16:30` = denser same-day follow-up
+
+**Scheduler Boundary**:
+- Deploy and manage `DailyReminderTimes` through managed preferences or local preferences
+- Do **not** deploy runtime scheduler state through preference payloads
+- Exact reschedules and daemon bookkeeping live in `/Library/Management/<rdnn>/dor-state.plist`
+- Runtime-only keys currently include `NextScheduledReminder` and `DaemonLastTriggered`
+- The aggressive-mode support kill switch is a runtime-only file at `/Library/Management/<rdnn>/dor-aggressive-kill`
+- Direct/manual/demo runs do not mutate this daemon scheduler state
+
+**Script Default**:
+```bash
+["dailyReminderTimes"]="string|08:00,12:00,16:00"
+```
+
+**Configuration Profile**:
+```xml
+<key>DailyReminderTimes</key>
+<string>08:00,12:00,16:00</string>
+```
+
+**Local Preference**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    DailyReminderTimes -string "08:00,12:00,16:00"
+```
+
+**Related Runtime State**:
+```text
+/Library/Management/<rdnn>/dor-state.plist
+  - NextScheduledReminder
+  - DaemonLastTriggered
+  - PreDeadlineThresholdSignature
+  - PreDeadlineThresholdDelivered
+  - PreDeadlineThresholdSkipped
+```
+
+---
+
+#### minutesBeforeDeadlineReminderSchedule
+**Plist Key**: `MinutesBeforeDeadlineReminderSchedule`
+**Type**: String
+**Default**: `45,30,15,10,5`
+**Valid Format**: Positive integer CSV, minutes before effective DDM enforcement deadline
+
+**Description**: Admin-controlled final-minute reminder thresholds. Each configured threshold displays at most once per resolved deadline/version signature.
+
+**Behavior**:
+- Values are normalized, sorted descending, and de-duplicated by runtime
+- Invalid entries are ignored with warning logging; a fully invalid value falls back to the runtime source default
+- An explicitly empty managed/local value disables these threshold reminders
+- Thresholds evaluate against the effective enforcement epoch, including a trusted padded enforcement date when one is safely resolved
+- Due threshold reminders bypass `QuietPeriodMinutes`; standard reminders still honor it
+- Delivery state is stored in `/Library/Management/<rdnn>/dor-state.plist`
+
+**Script Default**:
+```bash
+["minutesBeforeDeadlineReminderSchedule"]="string|45,30,15,10,5"
+```
+
+**Configuration Profile**:
+```xml
+<key>MinutesBeforeDeadlineReminderSchedule</key>
+<string>45,30,15,10,5</string>
+```
+
+**Disable Example**:
+```xml
+<key>MinutesBeforeDeadlineReminderSchedule</key>
+<string></string>
+```
+
+**Related Runtime State**:
+```text
+/Library/Management/<rdnn>/dor-state.plist
+  - PreDeadlineThresholdSignature
+  - PreDeadlineThresholdDelivered
+  - PreDeadlineThresholdSkipped
+```
+
+#### PreDeadlineThresholdSignature Runtime State
+
+`PreDeadlineThresholdSignature` is an internal identity for the final-minute threshold-delivery ledger. It is runtime state, not a configurable preference.
+
+**Location**:
+
+```text
+/Library/Management/<rdnn>/dor-state.plist
+```
+
+**Format**:
+
+```text
+<VersionString>|<BuildVersionString>|<effective-enforcement-epoch>
+```
+
+**Example**:
+
+```text
+26.6|(null)|1785880800
+```
+
+| Component | Example | Meaning |
+|-----------|---------|---------|
+| `VersionString` | `26.6` | Required macOS product version resolved from the applicable DDM declaration |
+| `BuildVersionString` | `(null)` | Required build when supplied; Apple may emit the literal `(null)` when no usable build is present, in which case compliance falls back to product-version comparison |
+| Effective enforcement epoch | `1785880800` | Unix epoch used for threshold calculations; normally the declared future enforcement date, or a trusted padded enforcement date when one is safely resolved after the original deadline |
+
+**Ledger Behavior**:
+
+- Runtime compares the calculated signature with the value already stored in `dor-state.plist`
+- When the signature matches, `PreDeadlineThresholdDelivered` and `PreDeadlineThresholdSkipped` remain associated with that declaration
+- When the version, build, or effective enforcement epoch changes, runtime writes the new signature and deletes both threshold lists
+- `PreDeadlineThresholdDelivered` is a descending, de-duplicated CSV of configured minute thresholds already displayed, such as `45,30`
+- `PreDeadlineThresholdSkipped` is a descending, de-duplicated CSV of earlier thresholds crossed before the nearest due threshold could be displayed
+- Together, these values ensure each configured threshold is handled at most once for one resolved deadline/version signature
+
+**Operational Interpretation**:
+
+- A signature may appear before any threshold is due because daemon-managed runs evaluate the next pending threshold while choosing between that exact time and the next `DailyReminderTimes` baseline slot
+- Missing `PreDeadlineThresholdDelivered` or `PreDeadlineThresholdSkipped` keys normally mean no thresholds have yet been recorded for the current signature
+- `NextScheduledReminder` remains the separate scheduler instruction; the signature does not itself indicate that a reminder is due
+- The signature contains declaration identity only; changing `MinutesBeforeDeadlineReminderSchedule` does not reset delivered/skipped history for an otherwise unchanged declaration
+- Direct, manual, and demo runs do not mutate this daemon scheduler state
+- Do not deploy these keys through a `.plist` or Configuration Profile
+- Do not delete or edit the signature during normal troubleshooting; changing it resets delivered/skipped history on the next daemon-managed run and can make a threshold eligible again
+
+**Inspection**:
+
+```zsh
+plutil -p "/Library/Management/<rdnn>/dor-state.plist"
+date -r 1785880800 '+%Y-%m-%d %H:%M:%S %Z'
+```
+
+The `date` command renders the epoch in the Mac's local time zone.
+
+---
+
+#### acceptableAssertionApplicationNames
+**Plist Key**: `AcceptableAssertionApplicationNames`
+**Type**: String
+**Default**: `MSTeams zoom.us Webex`
+**Valid Format**: Space-delimited app names/keywords
+
+**Description**: List of meeting/presentation apps used to decide whether the dialog should defer during active calls/screensharing. If an active display-sleep assertion matches one of these values, `meetingDelay` is applied; otherwise the reminder proceeds immediately.
+
+**Impact**:
+- Default (`MSTeams zoom.us Webex`) = defers primarily for common meeting apps
+- Empty or whitespace-only = broad matching mode (most non-core audio assertions can trigger deferral)
+- Custom list = defers only for matching apps in your list
+- Matching is case-insensitive and substring-based
+
+To discover what app names your environment reports while a meeting app is active, run:
+```bash
+pmset -g assertions | grep -E "NoDisplaySleepAssertion|PreventUserIdleDisplaySleep"
+```
+
+**Example Apps**:
+- `MSTeams` - Microsoft Teams
+- `zoom.us` - Zoom
+- `Webex` - Cisco Webex
+- `Slack` - Slack (screen sharing)
+
+**Script Default**:
+```bash
+["acceptableAssertionApplicationNames"]="string|MSTeams zoom.us Webex"
+```
+
+**Configuration Profile**:
+```xml
+<key>AcceptableAssertionApplicationNames</key>
+<string>MSTeams zoom.us Webex</string>
+```
+
+**Local Preference**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    AcceptableAssertionApplicationNames -string "MSTeams zoom.us Webex"
+```
+
+**Related Logic**:
+- See [Runtime Decision Tree - Meeting Detection](02-runtime-decision-tree.md#8-meeting-detection)
+- Works in conjunction with `meetingDelay` preference
+- Feature Request: Issue #67
+
+---
+
+#### minimumDiskFreePercentage
+**Plist Key**: `MinimumDiskFreePercentage`
+**Type**: Integer
+**Default**: 99
+**Valid Range**: 0-99
+
+**Description**: Minimum percentage of free disk space required to avoid showing a low disk space warning in the dialog.
+
+**Impact**:
+- Warns users who may not have enough space for update
+- 0 = disabled (no warning)
+- 99 = near-disabled (warning only if <1% free)
+- Adds warning message, doesn't block dialog
+
+**Recommendations**:
+- **Disabled**: 0
+- **Typical macOS update**: 15-20%
+- **Major macOS upgrade**: 25-30%
+
+**Script Default**:
+```bash
+["minimumDiskFreePercentage"]="numeric|99"
+```
+
+**Configuration Profile**:
+```xml
+<key>MinimumDiskFreePercentage</key>
+<integer>20</integer>
+```
+
+**Warning Message Variable**: `diskSpaceWarningMessage`
+
+---
+
+### 3. Branding & Appearance
+
+#### organizationOverlayiconURL
+**Plist Key**: `OrganizationOverlayIconURL`
+**Type**: String
+**Default**: `https://use2.ics.services.jamfcloud.com/icon/hash_2d64ce7f0042ad68234a2515211adb067ad6714703dd8ebd6f33c1ab30354b1d`
+
+**Description**: URL to organization's icon/logo displayed in the dialog. Accepts HTTP/HTTPS URLs or local file paths.
+
+**Supported Formats**:
+- PNG (recommended)
+- JPEG
+- ICNS
+- Local paths: `file:///path/to/icon.png`
+
+**Recommendations**:
+- Size: 256x256px or larger
+- Transparent background (PNG)
+- High contrast for visibility
+
+**Script Default**:
+```bash
+["organizationOverlayiconURL"]="string|https://use2.ics.services.jamfcloud.com/icon/hash_2d64ce7f0042ad68234a2515211adb067ad6714703dd8ebd6f33c1ab30354b1d"
+```
+
+**Configuration Profile**:
+```xml
+<key>OrganizationOverlayIconURL</key>
+<string>https://cdn.company.com/it-icon.png</string>
+```
+
+**Local File Example**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    OrganizationOverlayIconURL -string "file:///Library/Management/icons/company-logo.png"
+```
+
+---
+
+#### organizationOverlayiconURLdark
+**Plist Key**: `OrganizationOverlayIconURLdark`
+**Type**: String
+**Default**: `https://use2.ics.services.jamfcloud.com/icon/hash_d3a3bc5e06d2db5f9697f9b4fa095bfecb2dc0d22c71aadea525eb38ff981d39`
+
+**Description**: URL to organization's dark mode icon/logo displayed when macOS is in Dark Mode (System Settings > Appearance > Dark). Set to empty to always use the standard `organizationOverlayiconURL` regardless of appearance mode. The script automatically detects the user's appearance mode from `~/Library/Preferences/.GlobalPreferences.plist` and selects the appropriate icon.
+
+**Supported Formats**:
+- PNG (recommended)
+- JPEG
+- ICNS
+- Local paths: `file:///path/to/icon.png`
+
+**Behavior**:
+- **Dark Mode Active + Dark URL Set**: Uses `organizationOverlayiconURLdark`
+- **Dark Mode Active + Dark URL Empty**: Falls back to `organizationOverlayiconURL`
+- **Light Mode**: Always uses `organizationOverlayiconURL`
+- **Auto Appearance**: Detects system appearance dynamically at runtime
+
+**Recommendations**:
+- Size: 256x256px or larger (match your light mode icon)
+- Design: Optimize contrast for dark backgrounds
+- Testing: Verify visibility in both System Settings > Appearance modes
+
+**Script Default**:
+```bash
+["organizationOverlayiconURLdark"]="string|https://use2.ics.services.jamfcloud.com/icon/hash_d3a3bc5e06d2db5f9697f9b4fa095bfecb2dc0d22c71aadea525eb38ff981d39"
+```
+
+**Configuration Profile**:
+```xml
+<key>OrganizationOverlayIconURLdark</key>
+<string>https://cdn.company.com/it-icon-dark.png</string>
+```
+
+**Local Preference**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    OrganizationOverlayIconURLdark -string "https://cdn.company.com/dark-icon.png"
+```
+
+**Local File Example**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    OrganizationOverlayIconURLdark -string "file:///Library/Management/icons/company-logo-dark.png"
+```
+
+**Demo Mode**: Automatically detects and respects the current System Settings > Appearance selection (Auto, Light, or Dark).
+
+---
+
+#### swapOverlayAndLogo
+**Plist Key**: `SwapOverlayAndLogo`
+**Type**: Boolean
+**Default**: NO
+
+**Description**: Swaps the position of the overlay icon and the default swiftDialog logo in the dialog window.
+
+**Values**:
+- `NO` / `false` / `0` = Default position
+- `YES` / `true` / `1` = Swapped position
+
+**Script Default**:
+```bash
+["swapOverlayAndLogo"]="boolean|NO"
+```
+
+**Configuration Profile**:
+```xml
+<key>SwapOverlayAndLogo</key>
+<true/>
+```
+
+**Local Preference**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    SwapOverlayAndLogo -bool YES
+```
+
+---
+
+#### dateFormatDeadlineHumanReadable
+**Plist Key**: `DateFormatDeadlineHumanReadable`
+**Type**: String
+**Default**: `+%a, %d-%b-%Y, %-l:%M %p`
+
+**Description**: `date` command format string for displaying the DDM enforcement deadline in human-readable format.
+
+**Default Output Example**: `Wed, 01-Apr-2026, 8:00 AM`
+
+**Format Codes**:
+- `%a` = Abbreviated weekday (Mon, Tue, etc.)
+- `%d` = Day of month (01-31)
+- `%b` = Abbreviated month (Jan, Feb, etc.)
+- `%Y` = 4-digit year
+- `%-l` = Hour (1-12, no leading zero)
+- `%M` = Minute (00-59)
+- `%p` = AM/PM
+
+**Alternative Formats**:
+```bash
+# US Format: 04/01/2026 8:00 AM
+"+%m/%d/%Y %-l:%M %p"
+
+# Swiss Format: 01.04.2026 20:00
+"+%d.%m.%Y %H:%M"
+
+# ISO Format: 2026-04-01 08:00
+"+%Y-%m-%d %H:%M"
+
+# Verbose: Wednesday, April 1, 2026 at 8:00 AM
+"+%A, %B %d, %Y at %-l:%M %p"
+```
+
+**Script Default**:
+```bash
+["dateFormatDeadlineHumanReadable"]="string|+%a, %d-%b-%Y, %-l:%M %p"
+```
+
+**Configuration Profile**:
+```xml
+<key>DateFormatDeadlineHumanReadable</key>
+<string>+%m/%d/%Y %-l:%M %p</string>
+```
+
+**Note**: Leading `+` is required and automatically added if missing
+
+**Locale Behavior (3.0.0+, expanded in 4.0.0)**:
+- `%a` / `%A` / `%b` / `%B` follow the resolved dialog language for shipped locales (`de`, `fr`, `es`, `it`, `nl`, `pt`, `ja`, fallback `en`)
+- When you provide custom `*Localized_<code>` families beyond the shipped set, the script prefers a matching installed locale for date-token rendering when one is available
+- Optional region-aware overrides use `DateFormatDeadlineHumanReadableLocalized_<code>` and resolve as exact locale (for example `fr_CA`) → base language (for example `fr`) → global `DateFormatDeadlineHumanReadable` → built-in script default
+- Relative `Today` / `Tomorrow` deadline strings reuse the same resolved locale-aware time policy as the absolute deadline formatter
+- Numeric-only formats (for example `%d.%m.%Y %H:%M`) are unchanged across locales
+
+**Region-aware Example**:
+```xml
+<key>DateFormatDeadlineHumanReadable</key>
+<string>+%a, %d-%b-%Y, %-l:%M %p</string>
+<key>DateFormatDeadlineHumanReadableLocalized_fr</key>
+<string>+%a %d/%m/%Y %H:%M</string>
+<key>DateFormatDeadlineHumanReadableLocalized_fr_CA</key>
+<string>+%a %Y-%m-%d %H:%M</string>
+<key>DateFormatDeadlineHumanReadableLocalized_en_GB</key>
+<string>+%a, %d/%m/%Y %H:%M</string>
+<key>DateFormatDeadlineHumanReadableLocalized_ja</key>
+<string>+%Y年%-m月%-d日 (%a) %p %-I:%M</string>
+```
+
+---
+
+### 4. Support Team Information
+
+#### supportTeamName
+**Plist Key**: `SupportTeamName`
+**Type**: String
+**Default**: `IT Support`
+
+**Description**: Name of your organization's support team displayed throughout the dialog and help screen.
+
+**Placeholder**: `{supportTeamName}`
+**Used In**: message, helpmessage
+
+**Script Default**:
+```bash
+["supportTeamName"]="string|IT Support"
+```
+
+**Configuration Profile**:
+```xml
+<key>SupportTeamName</key>
+<string>Enterprise IT Services</string>
+```
+
+---
+
+#### supportTeamPhone
+**Plist Key**: `SupportTeamPhone`
+**Type**: String
+**Default**: `+1 (801) 555-1212`
+
+**Description**: Support team phone number displayed in help dialog.
+
+**Placeholder**: `{supportTeamPhone}`
+**Used In**: helpmessage
+
+**Recommendations**:
+- Include country code
+- Use standard formatting
+- Consider toll-free numbers
+
+**Script Default**:
+```bash
+["supportTeamPhone"]="string|+1 (801) 555-1212"
+```
+
+**Configuration Profile**:
+```xml
+<key>SupportTeamPhone</key>
+<string>+1 (555) 123-4567</string>
+```
+
+**Related Visibility Control**: `HideSupportTeamPhone`
+
+---
+
+#### hideSupportTeamPhone
+**Plist Key**: `HideSupportTeamPhone`
+**Type**: Boolean
+**Default**: `NO`
+
+**Description**: When `YES`, removes the phone row from `HelpMessage` before placeholder replacement and blanks `{supportTeamPhone}` for any custom support copy.
+
+**Configuration Profile**:
+```xml
+<key>HideSupportTeamPhone</key>
+<true/>
+```
+
+---
+
+#### supportTeamEmail
+**Plist Key**: `SupportTeamEmail`
+**Type**: String
+**Default**: `rescue@domain.org`
+
+**Description**: Support team email address displayed in help dialog.
+
+**Placeholder**: `{supportTeamEmail}`
+**Used In**: helpmessage
+
+**Script Default**:
+```bash
+["supportTeamEmail"]="string|rescue@domain.org"
+```
+
+**Configuration Profile**:
+```xml
+<key>SupportTeamEmail</key>
+<string>helpdesk@company.com</string>
+```
+
+**Related Visibility Control**: `HideSupportTeamEmail`
+
+---
+
+#### hideSupportTeamEmail
+**Plist Key**: `HideSupportTeamEmail`
+**Type**: Boolean
+**Default**: `NO`
+
+**Description**: When `YES`, removes the email row from `HelpMessage` before placeholder replacement and blanks `{supportTeamEmail}` for any custom support copy.
+
+**Configuration Profile**:
+```xml
+<key>HideSupportTeamEmail</key>
+<true/>
+```
+
+---
+
+#### supportTeamWebsite
+**Plist Key**: `SupportTeamWebsite`
+**Type**: String
+**Default**: `https://support.domain.org`
+
+**Description**: Support team website URL displayed in help dialog.
+
+**Placeholder**: `{supportTeamWebsite}`
+**Used In**: helpmessage
+
+**Script Default**:
+```bash
+["supportTeamWebsite"]="string|https://support.domain.org"
+```
+
+**Configuration Profile**:
+```xml
+<key>SupportTeamWebsite</key>
+<string>https://helpdesk.company.com</string>
+```
+
+**Related Visibility Control**: `HideSupportTeamWebsite`
+
+---
+
+#### hideSupportTeamWebsite
+**Plist Key**: `HideSupportTeamWebsite`
+**Type**: Boolean
+**Default**: `NO`
+
+**Description**: When `YES`, removes the website row from `HelpMessage` before placeholder replacement and blanks `{supportTeamWebsite}` for any custom support copy.
+
+**Configuration Profile**:
+```xml
+<key>HideSupportTeamWebsite</key>
+<true/>
+```
+
+---
+
+#### supportKB
+**Plist Key**: `SupportKB`
+**Type**: String
+**Default**: `Update macOS on Mac`
+
+**Description**: Display text for knowledge base article link (without URL).
+
+**Related**: Used with `supportKBURL` to create markdown link
+
+**Script Default**:
+```bash
+["supportKB"]="string|Update macOS on Mac"
+```
+
+**Configuration Profile**:
+```xml
+<key>SupportKB</key>
+<string>How to Update macOS</string>
+```
+
+---
+
+#### infobuttonaction
+**Plist Key**: `InfoButtonAction`
+**Type**: String
+**Default**: `https://support.apple.com/108382`
+
+**Description**: URL opened when user clicks the info button (?) in dialog. Also used as QR code content in help dialog.
+
+**Placeholder**: `{infobuttonaction}`
+**Used In**: helpimage (QR code generation)
+
+**Recommendations**:
+- Link to internal KB article
+- Link to video tutorial
+- Link to support portal
+
+**Script Default**:
+```bash
+["infobuttonaction"]="string|https://support.apple.com/108382"
+```
+
+**Configuration Profile**:
+```xml
+<key>InfoButtonAction</key>
+<string>https://kb.company.com/macos-updates</string>
+```
+
+**Special Value**: None for hide behavior
+
+**Important**: An empty `InfoButtonAction` value does not hide the info button. Use `InfoButtonText=hide` to hide the info button.
+
+---
+
+#### supportKBURL
+**Plist Key**: `SupportKBURL`
+**Type**: String
+**Default**: `[Update macOS on Mac](https://support.apple.com/108382)`
+
+**Description**: Full markdown-formatted link combining `supportKB` text with URL for display in help message.
+
+**Format**: `[Link Text](URL)`
+
+**Placeholder**: `{supportKBURL}`
+**Used In**: helpmessage
+
+**Script Default**:
+```bash
+["supportKBURL"]="string|[Update macOS on Mac](https://support.apple.com/108382)"
+```
+
+**Configuration Profile**:
+```xml
+<key>SupportKBURL</key>
+<string>[How to Update macOS](https://kb.company.com/updates)</string>
+```
+
+**Related Visibility Control**: `HideSupportKB`
+
+---
+
+#### hideSupportKB
+**Plist Key**: `HideSupportKB`
+**Type**: Boolean
+**Default**: `NO`
+
+**Description**: When `YES`, removes the KB row from `HelpMessage` before placeholder replacement and blanks `{supportKB}` / `{supportKBURL}` without hiding the info button or QR help image.
+
+**Configuration Profile**:
+```xml
+<key>HideSupportKB</key>
+<true/>
+```
+
+---
+
+#### supportAssistanceMessage
+**Plist Key**: `SupportAssistanceMessage`
+**Type**: String
+**Default**: `<br><br>For assistance, please contact **{supportTeamName}** by clicking the (?) button in the bottom, right-hand corner.`
+
+**Description**: Message fragment appended to `Message` for end-user support guidance. This keeps KB-assisted wording isolated from the main `Message` body.
+
+**Placeholder**: `{supportAssistanceMessage}`
+**Used In**: message
+
+**Script Default**:
+```bash
+["supportAssistanceMessage"]="string|<br><br>For assistance, please contact **{supportTeamName}** by clicking the (?) button in the bottom, right-hand corner."
+```
+
+**Configuration Profile**:
+```xml
+<key>SupportAssistanceMessage</key>
+<string>&lt;br&gt;&lt;br&gt;For assistance, please contact **{supportTeamName}** by clicking the (?) button in the bottom, right-hand corner.</string>
+```
+
+**Related Visibility Control**: `HideSupportAssistanceMessage`
+
+---
+
+#### hideSupportAssistanceMessage
+**Plist Key**: `HideSupportAssistanceMessage`
+**Type**: Boolean
+**Default**: `NO`
+
+**Description**: When `YES`, suppresses `{supportAssistanceMessage}` in the main dialog body while leaving `HelpMessage` and the info button unchanged.
+
+**Configuration Profile**:
+```xml
+<key>HideSupportAssistanceMessage</key>
+<true/>
+```
+
+---
+
+### 5. Localization & Language Selection
+
+#### languageOverride
+**Plist Key**: `LanguageOverride`
+**Type**: String
+**Default**: `auto`
+**Supported Values**: `auto`, `en`, `de`, `fr`, `es`, `it`, `nl`, `pt`, `ja`, plus additional language codes backed by matching localized preference keys
+
+**Description**: Selects the localization family used for dialog content.
+When set to `auto`, the script reads the logged-in user’s `AppleLanguages:0` value, normalizes the built-in supported locales, and can honor additional languages when matching `*Localized_<code>` keys are present in managed or local preferences.
+
+**Fallback Chain**:
+1. Selected localized key (for example, `MessageLocalized_nl`)
+2. Base scalar key (for example, `Message`)
+
+**Script Default**:
+```bash
+["languageOverride"]="string|auto"
+```
+
+**Configuration Profile**:
+```xml
+<key>LanguageOverride</key>
+<string>nl</string>
+```
+
+**Local Preference (testing)**:
+```bash
+# Force Dutch for testing
+defaults write /Library/Preferences/org.churchofjesuschrist.dorm LanguageOverride -string "nl"
+# Verify
+grep "LanguageOverride is" /var/log/org.churchofjesuschrist.log
+```
+
+**Localized Key Families** (`{lang}` = `en`, `de`, `fr`, `es`, `it`, `nl`, `pt`, `ja`):
+
+*Existing families (2.x+)*:
+- `TitleLocalized_{lang}`
+- `Button1TextLocalized_{lang}`
+- `Button2TextLocalized_{lang}`
+- `InfoButtonTextLocalized_{lang}`
+- `MessageLocalized_{lang}`
+- `HelpMessageLocalized_{lang}`
+- `SupportAssistanceMessageLocalized_{lang}`
+- `ExcessiveUptimeWarningMessageLocalized_{lang}`
+- `DiskSpaceWarningMessageLocalized_{lang}`
+- `StagedUpdateMessageLocalized_{lang}`
+- `PartiallyStagedUpdateMessageLocalized_{lang}`
+- `PendingDownloadMessageLocalized_{lang}`
+
+*Dynamic localization primitives (3.2.0+)*:
+- `RelativeDeadlineTodayLocalized_{lang}`
+- `RelativeDeadlineTomorrowLocalized_{lang}`
+- `UpdateWordLocalized_{lang}`
+- `UpgradeWordLocalized_{lang}`
+- `SoftwareUpdateButtonTextUpdateLocalized_{lang}`
+- `SoftwareUpdateButtonTextUpgradeLocalized_{lang}`
+- `RestartNowButtonTextLocalized_{lang}`
+- `InfoboxLabelCurrentLocalized_{lang}`
+- `InfoboxLabelRequiredLocalized_{lang}`
+- `InfoboxLabelDeadlineLocalized_{lang}`
+- `InfoboxLabelDaysRemainingLocalized_{lang}`
+- `InfoboxLabelLastRestartLocalized_{lang}`
+- `InfoboxLabelFreeDiskSpaceLocalized_{lang}`
+- `DeadlineEnforcementMessageAbsoluteLocalized_{lang}`
+- `DeadlineEnforcementMessageRelativeLocalized_{lang}`
+- `PastDeadlinePromptTitleLocalized_{lang}`
+- `PastDeadlinePromptMessageLocalized_{lang}`
+- `PastDeadlineForceTitleLocalized_{lang}`
+- `PastDeadlineForceMessageLocalized_{lang}`
+- `AggressiveModeTitleLocalized_{lang}`
+- `AggressiveModeMessageLocalized_{lang}`
+
+---
+
+### 6. Dialog UI Text
+
+#### title
+**Plist Key**: `Title`
+**Type**: String
+**Default**: `macOS {titleMessageUpdateOrUpgrade} Required`
+
+**Description**: Main title displayed at the top of the dialog window.
+
+**Supports Placeholders**: Yes
+
+**Common Placeholders**:
+- `{titleMessageUpdateOrUpgrade}` = "Update" or "Upgrade" (auto-detected)
+- `{ddmVersionString}` = Required macOS version
+
+**Script Default**:
+```bash
+["title"]="string|macOS {titleMessageUpdateOrUpgrade} Required"
+```
+
+**Configuration Profile**:
+```xml
+<key>Title</key>
+<string>Action Required: macOS {ddmVersionString} Update</string>
+```
+
+**Rendered Example**: `macOS Update Required` or `macOS Upgrade Required`
+
+---
+
+#### button1text
+**Plist Key**: `Button1Text`
+**Type**: String
+**Default**: `Open Software Update`
+
+**Description**: Label for the primary action button (Button 1) that opens System Settings → Software Update.
+
+**Placeholder**: `{button1text}`
+**Used In**: message
+
+**Recommendations**:
+- Keep concise (2-4 words)
+- Action-oriented
+- Clear outcome
+
+**Script Default**:
+```bash
+["button1text"]="string|Open Software Update"
+```
+
+**Configuration Profile**:
+```xml
+<key>Button1Text</key>
+<string>Update Now</string>
+```
+
+---
+
+#### button2text
+**Plist Key**: `Button2Text`
+**Type**: String
+**Default**: `Remind Me Later`
+
+**Description**: Label for the secondary button (Button 2) that dismisses the dialog for later reminder.
+
+**Placeholder**: `{button2text}`
+**Used In**: message
+
+**Note**: This button is automatically disabled/hidden when deadline is imminent (controlled by `daysBeforeDeadlineHidingButton2`)
+
+**Script Default**:
+```bash
+["button2text"]="string|Remind Me Later"
+```
+
+**Configuration Profile**:
+```xml
+<key>Button2Text</key>
+<string>Not Now</string>
+```
+
+---
+
+#### infobuttontext
+**Plist Key**: `InfoButtonText`
+**Type**: String
+**Default**: `Update macOS on Mac`
+
+**Description**: Label text displayed on the info button.
+
+**Special Value**: `hide` to completely hide the info button
+
+**Script Default**:
+```bash
+["infobuttontext"]="string|Update macOS on Mac"
+```
+
+**Configuration Profile**:
+```xml
+<key>InfoButtonText</key>
+<string>Learn More About Updates</string>
+```
+
+**To Hide Info Button**:
+```xml
+<key>InfoButtonText</key>
+<string>hide</string>
+```
+
+---
+
+#### message
+**Plist Key**: `Message`
+**Type**: String
+**Default**: [Full message text with placeholders]
+
+**Description**: Main body text of the dialog. Supports HTML formatting and extensive placeholder substitution.
+
+**Supports Placeholders**: Yes (20+ placeholders)
+
+**HTML Formatting**:
+- `**bold**` = Bold text
+- `<br>` or `<br><br>` = Line breaks
+- Standard markdown formatting
+
+**Key Placeholders Used**:
+- `{loggedInUserFirstname}` = User's first name
+- `{ddmVersionString}` = Required macOS version
+- `{titleMessageUpdateOrUpgradeLower}` = "update" or "upgrade" (lowercase)
+- `{updateReadyMessage}` = Staged update status message
+- `{button1text}` = Button 1 label
+- `{button2text}` = Button 2 label
+- `{softwareUpdateButtonText}` = Expected button in System Settings
+- `{ddmEnforcedInstallDateHumanReadable}` = Formatted deadline
+- `{ddmEnforcedInstallDateRelativeHumanReadable}` = Relative deadline when applicable (Today/Tomorrow), else formatted deadline
+- `{excessiveUptimeWarningMessage}` = Uptime warning (if applicable)
+- `{diskSpaceWarningMessage}` = Disk space warning (if applicable)
+- `{supportTeamName}` = Support team name
+- `{supportAssistanceMessage}` = Optional support sentence appended to message body
+- `{weekday}` = Current day of week
+
+**Script Default** (condensed):
+```bash
+["message"]="string|**A required macOS {titleMessageUpdateOrUpgradeLower} is now available**<br><br>Happy {weekday}, {loggedInUserFirstname}!<br><br>Please {titleMessageUpdateOrUpgradeLower} to macOS **{ddmVersionString}**..."
+```
+
+**Configuration Profile** (escaped HTML):
+```xml
+<key>Message</key>
+<string>**Important Update Required**&lt;br&gt;&lt;br&gt;Hello {loggedInUserFirstname},&lt;br&gt;&lt;br&gt;Your Mac must be updated to macOS {ddmVersionString} by {ddmEnforcedInstallDateHumanReadable}.</string>
+```
+
+**Customization Tips**:
+- Keep paragraphs short
+- Use bold for emphasis
+- Include clear call-to-action
+- Explain consequences of deadline
+
+---
+
+#### infobox
+**Plist Key**: `InfoBox`
+**Type**: String
+**Default**: [System information display]
+
+**Description**: Right sidebar content showing current system status and deadline information.
+
+**Supports Placeholders**: Yes
+
+**Key Placeholders Used**:
+- `{installedmacOSVersion}` = Current macOS version
+- `{ddmVersionString}` = Required macOS version
+- `{infoboxDeadlineDisplay}` = Effective deadline display, including relative Today/Tomorrow wording when applicable (red when past deadline on supported swiftDialog versions)
+- `{infoboxDaysRemainingDisplay}` = Signed days-until-effective-deadline display (red when `<= 0` on supported swiftDialog versions)
+- `{infoboxLastRestartDisplay}` = Time since last restart display (red when uptime meets/exceeds threshold on supported swiftDialog versions)
+- `{diskSpaceHumanReadable}` = Free disk space
+
+**Script Default**:
+```bash
+["infobox"]="string|**Current:** macOS {installedmacOSVersion}<br><br>**Required:** macOS {ddmVersionString}<br><br>**Deadline:** {infoboxDeadlineDisplay}..."
+```
+
+**Configuration Profile**:
+```xml
+<key>InfoBox</key>
+<string>**System Info**&lt;br&gt;&lt;br&gt;Current: {installedmacOSVersion}&lt;br&gt;Target: {ddmVersionString}&lt;br&gt;Due: {infoboxDeadlineDisplay}</string>
+```
+
+---
+
+#### helpmessage
+**Plist Key**: `HelpMessage`
+**Type**: String
+**Default**: [Support contact information]
+
+**Description**: Content displayed when user clicks the help (?) button, providing support contact details and system information.
+
+**Supports Placeholders**: Yes (all support placeholders + system info)
+
+**Key Placeholders Used**:
+- All support team variables
+- `{userfullname}` = User's full name
+- `{username}` = User's account name
+- `{computername}` = Mac's computer name
+- `{serialnumber}` = Mac's serial number
+- `{osversion}` = Current macOS version
+- `{dialogVersion}` = swiftDialog version
+- `{scriptVersion}` = DDM OS Reminder version
+
+**Script Default** (condensed):
+```bash
+["helpmessage"]="string|For assistance, please contact: **{supportTeamName}**<br>- **Telephone:** {supportTeamPhone}<br>- **Email:** {supportTeamEmail}..."
+```
+
+**Configuration Profile**:
+```xml
+<key>HelpMessage</key>
+<string>**Need Help?**&lt;br&gt;&lt;br&gt;Contact {supportTeamName}:&lt;br&gt;Phone: {supportTeamPhone}&lt;br&gt;Email: {supportTeamEmail}</string>
+```
+
+**Assembly Note**: `assemble.zsh --interactive` with `Knowledge Base ('YES' to specify; 'NO' to hide)` set to `NO` rewrites `HelpMessage` to remove the `Knowledge Base Article` row.
+
+---
+
+#### helpimage
+**Plist Key**: `HelpImage`
+**Type**: String
+**Default**: `qr={infobuttonaction}`
+
+**Description**: Image displayed in the help dialog. Uses special swiftDialog syntax to generate QR code.
+
+**QR Code Syntax**: `qr=URL`
+**Direct Image**: Full URL or file path to image
+
+**Special Value**: `hide` to show no image
+
+**Script Default**:
+```bash
+["helpimage"]="string|qr={infobuttonaction}"
+```
+
+**Configuration Profile (QR Code)**:
+```xml
+<key>HelpImage</key>
+<string>qr=https://support.company.com</string>
+```
+
+**Configuration Profile (Direct Image)**:
+```xml
+<key>HelpImage</key>
+<string>https://cdn.company.com/support-image.png</string>
+```
+
+**To Hide Help Image**:
+```xml
+<key>HelpImage</key>
+<string>hide</string>
+```
+
+---
+
+### 7. Update Staging Messages
+
+#### stagedUpdateMessage
+**Plist Key**: `StagedUpdateMessage`
+**Type**: String
+**Default**: [Message about fully staged update]
+
+**Description**: Message shown when the required macOS update appears fully downloaded and ready for installation.
+
+**Supports Placeholders**: Yes
+**Inserted Into**: `{updateReadyMessage}` placeholder in `message`
+
+**When This Usually Appears**:
+- The device has clear signs that update assets are fully staged
+- Staged metadata can be read
+- Staged version matches the DDM-required version
+
+**Script Default**:
+```bash
+["stagedUpdateMessage"]="string|<br><br>**Good news!** The macOS {ddmVersionString} update has already been downloaded to your Mac and is ready to install. Installation will proceed quickly when you click **{button1text}**."
+```
+
+**Configuration Profile**:
+```xml
+<key>StagedUpdateMessage</key>
+<string>&lt;br&gt;&lt;br&gt;**Ready to Install** The update is already downloaded and ready.</string>
+```
+
+---
+
+#### partiallyStagedUpdateMessage
+**Plist Key**: `PartiallyStagedUpdateMessage`
+**Type**: String
+**Default**: [Message about partial staging]
+
+**Description**: Message shown when download/preparation has started but is not fully staged yet.
+
+**Supports Placeholders**: Yes
+**Inserted Into**: `{updateReadyMessage}` placeholder in `message`
+
+**When This Usually Appears**:
+- The device shows partial staging signals
+- Full staged criteria are not yet met
+- Staged version metadata is available and matches the DDM-required version
+
+**Script Default**:
+```bash
+["partiallyStagedUpdateMessage"]="string|<br><br>Your Mac has begun downloading and preparing required macOS update components. Installation will be quicker once all assets have finished staging."
+```
+
+**Configuration Profile**:
+```xml
+<key>PartiallyStagedUpdateMessage</key>
+<string>&lt;br&gt;&lt;br&gt;Update download in progress...</string>
+```
+
+---
+
+#### pendingDownloadMessage
+**Plist Key**: `PendingDownloadMessage`
+**Type**: String
+**Default**: [Message about pending download]
+
+**Description**: Message shown when the update is not yet staged and will likely need to download when the user proceeds.
+
+**Supports Placeholders**: Yes
+**Inserted Into**: `{updateReadyMessage}` placeholder in `message`
+
+**When This Usually Appears**:
+- No reliable staging signals are present, or
+- Staged metadata is unavailable, or
+- Staged version does not match the DDM-required version
+
+**Script Default**:
+```bash
+["pendingDownloadMessage"]="string|<br><br>Your Mac will begin downloading the update shortly."
+```
+
+**Configuration Profile**:
+```xml
+<key>PendingDownloadMessage</key>
+<string>&lt;br&gt;&lt;br&gt;The update will download when you proceed.</string>
+```
+
+---
+
+#### hideStagedInfo
+**Plist Key**: `HideStagedUpdateInfo`
+**Type**: Boolean
+**Default**: NO
+
+**Description**: When set to YES, suppresses all staged update status messages (staged, partially staged, pending). The `{updateReadyMessage}` placeholder will be empty.
+
+**Values**:
+- `NO` / `false` / `0` = Show staging status (default)
+- `YES` / `true` / `1` = Hide staging status
+
+**Use Case**: Organizations that don't want to expose technical details about update staging
+
+**Script Default**:
+```bash
+["hideStagedInfo"]="boolean|NO"
+```
+
+**Configuration Profile**:
+```xml
+<key>HideStagedUpdateInfo</key>
+<true/>
+```
+
+**Local Preference**:
+```bash
+sudo defaults write /Library/Preferences/org.churchofjesuschrist.dorm \
+    HideStagedUpdateInfo -bool YES
+```
+
+---
+
+### 8. Warning Messages
+
+#### excessiveUptimeWarningMessage
+**Plist Key**: `ExcessiveUptimeWarningMessage`
+**Type**: String
+**Default**: [Warning about excessive uptime]
+
+**Description**: Warning message inserted into dialog when Mac has been running for excessive days without restart (threshold set by `daysOfExcessiveUptimeWarning`).
+
+**Supports Placeholders**: Yes
+**Key Placeholder**: `{uptimeHumanReadable}`
+**Inserted Into**: `{excessiveUptimeWarningMessage}` in `message`
+
+**Triggered When**: uptime meets/exceeds `daysOfExcessiveUptimeWarning` days (`0` means immediate)
+
+**Script Default**:
+```bash
+["excessiveUptimeWarningMessage"]="string|<br><br>**Note:** Your Mac has been powered-on for **{uptimeHumanReadable}**. For more reliable results, please manually restart your Mac before proceeding."
+```
+
+**Configuration Profile**:
+```xml
+<key>ExcessiveUptimeWarningMessage</key>
+<string>&lt;br&gt;&lt;br&gt;**Warning:** System uptime is {uptimeHumanReadable}. Please restart before updating.</string>
+```
+
+---
+
+#### diskSpaceWarningMessage
+**Plist Key**: `DiskSpaceWarningMessage`
+**Type**: String
+**Default**: [Warning about low disk space]
+
+**Description**: Warning message inserted when free disk space falls below `minimumDiskFreePercentage` threshold.
+
+**Supports Placeholders**: Yes
+**Key Placeholders**:
+- `{diskSpaceHumanReadable}` = Free space with percentage
+- `{titleMessageUpdateOrUpgradeLower}` = "update" or "upgrade"
+
+**Inserted Into**: `{diskSpaceWarningMessage}` in `message`
+
+**Triggered When**: Free disk space percentage < `minimumDiskFreePercentage`
+
+**Script Default**:
+```bash
+["diskSpaceWarningMessage"]="string|<br><br>**Note:** Your Mac has only **{diskSpaceHumanReadable}**, which may prevent this macOS {titleMessageUpdateOrUpgradeLower}."
+```
+
+**Configuration Profile**:
+```xml
+<key>DiskSpaceWarningMessage</key>
+<string>&lt;br&gt;&lt;br&gt;**Low Disk Space:** {diskSpaceHumanReadable} available. Free up space before updating.</string>
+```
+
+---
+
+### 9. Dynamic Localization Primitives
+
+Preference families that supply localized runtime copy previously hard-coded in the script. Each family includes a base scalar key (the fallback) and per-language variants following the `{PlistKey}Localized_{lang}` pattern where `{lang}` is `en`, `de`, `fr`, `es`, `nl`, `pt`, or `ja`. Changing these keys customizes or retranslates copy without modifying the script.
+
+---
+
+#### relativeDeadlineToday / relativeDeadlineTomorrow
+**Plist Keys**: `RelativeDeadlineToday` / `RelativeDeadlineTomorrow`
+**Type**: String
+**Defaults**: `Today` / `Tomorrow`
+
+**Description**: Relative deadline phrases substituted into the deadline enforcement message and deadline display when the enforcement date falls on the current day or the following day.
+
+---
+
+#### updateWord / upgradeWord
+**Plist Keys**: `UpdateWord` / `UpgradeWord`
+**Type**: String
+**Defaults**: `Update` / `Upgrade`
+
+**Description**: Source values for the `{titleMessageUpdateOrUpgrade}` placeholder. The script sets this word based on whether DDM requires an update or a major-version upgrade.
+
+---
+
+#### softwareUpdateButtonTextUpdate / softwareUpdateButtonTextUpgrade
+**Plist Keys**: `SoftwareUpdateButtonTextUpdate` / `SoftwareUpdateButtonTextUpgrade`
+**Type**: String
+**Defaults**: `Restart Now` / `Upgrade Now`
+
+**Description**: Label for the action button in System Settings → Software Update that users are instructed to click after opening the Software Update pane. The `Update` variant is used for point-release updates; the `Upgrade` variant is used for major-version upgrades.
+
+---
+
+#### restartNowButtonText
+**Plist Key**: `RestartNowButtonText`
+**Type**: String
+**Default**: `Restart Now`
+
+**Description**: Button label used in past-deadline restart dialogs (`Prompt` and `Force` modes). Overrides `button1text` and `softwareUpdateButtonText` in those modes.
+
+---
+
+#### Infobox Labels
+**Plist Keys**: `InfoboxLabelCurrent`, `InfoboxLabelRequired`, `InfoboxLabelDeadline`, `InfoboxLabelDaysRemaining`, `InfoboxLabelLastRestart`, `InfoboxLabelFreeDiskSpace`
+**Type**: String
+**Defaults**: `Current`, `Required`, `Deadline`, `Day(s) Remaining`, `Last Restart`, `Free Disk Space`
+
+**Description**: Labels for the six rows displayed in the infobox sidebar. Each accepts per-language variants following the standard `{Key}Localized_{lang}` pattern.
+
+---
+
+#### deadlineEnforcementMessageAbsolute / deadlineEnforcementMessageRelative
+**Plist Keys**: `DeadlineEnforcementMessageAbsolute` / `DeadlineEnforcementMessageRelative`
+**Type**: String
+
+**Description**: Sentence appended to `{deadlineEnforcementMessage}` inside `Message`. The `Absolute` variant is used when the deadline renders as a full date string; the `Relative` variant is used when it renders as Today or Tomorrow.
+
+**Key Placeholders**: `{deadlineDisplay}`, `{titleMessageUpdateOrUpgradeLower}`, `{titleMessageUpdateOrUpgrade}`
+
+---
+
+#### preDeadlineThresholdTitle / preDeadlineThresholdMessage
+**Plist Keys**: `PreDeadlineThresholdTitle` / `PreDeadlineThresholdMessage`
+**Type**: String
+**Defaults**: `macOS {titleMessageUpdateOrUpgrade} Deadline Soon` / [full final-minute reminder body]
+
+**Description**: Title and message body used for configured final-minute threshold reminders from `MinutesBeforeDeadlineReminderSchedule`.
+
+**Key Placeholders**: `{minutesBeforeDeadline}`, `{ddmVersionString}`, `{ddmVersionStringDeadlineHumanReadable}` (effective deadline display), `{titleMessageUpdateOrUpgradeLower}`, `{softwareUpdateButtonText}`, `{preDeadlineThresholdEmphasisOpen}`, `{preDeadlineThresholdEmphasisClose}`
+
+---
+
+#### pastDeadlinePromptTitle / pastDeadlinePromptMessage
+**Plist Keys**: `PastDeadlinePromptTitle` / `PastDeadlinePromptMessage`
+**Type**: String
+**Defaults**: `Restart Your Mac` / [full restart prompt body]
+
+**Description**: Title and message body used when `PastDeadlineRestartBehavior` is `Prompt`. `button1text` is also overridden to `RestartNowButtonText` in this mode.
+
+---
+
+#### pastDeadlineForceTitle / pastDeadlineForceMessage
+**Plist Keys**: `PastDeadlineForceTitle` / `PastDeadlineForceMessage`
+**Type**: String
+**Defaults**: `Your Mac is restarting` / [full force-restart body]
+
+**Description**: Title and message body used when `PastDeadlineRestartBehavior` is `Force`. A `--timer` countdown is added from `PastDeadlineForceTimerSeconds`; the dialog re-displays until the Mac restarts, with `PastDeadlineForceRedisplayDelaySeconds` between attempts.
+
+---
+
+#### aggressiveModeTitle / aggressiveModeMessage
+**Plist Keys**: `AggressiveModeTitle` / `AggressiveModeMessage`
+**Type**: String
+**Defaults**: `macOS {titleMessageUpdateOrUpgrade} Required Now` / [full aggressive update-focused body]
+
+**Description**: Title and message body used when aggressive mode is active and `PastDeadlineRestartBehavior` is `Off` or restart workflow is not eligible. If `PastDeadlineRestartBehavior` is `Prompt` and restart workflow is eligible, restart-focused copy remains in use while aggressive mode controls the redisplay cadence. If `PastDeadlineRestartBehavior` is `Force`, force-restart copy and forced loop behavior take precedence.
+
+**Key Placeholders**: `{aggressiveModeHoursPastDeadline}`, `{aggressiveModeFrequencyMinutes}`, `{ddmVersionString}`, `{ddmVersionStringDeadlineHumanReadable}`, `{titleMessageUpdateOrUpgradeLower}`, `{softwareUpdateButtonText}`, plus the standard support, disk, staging, and deadline placeholders.
+
+**Localized Families**: `AggressiveModeTitleLocalized_<code>` / `AggressiveModeMessageLocalized_<code>`
+
+---
+
+## Placeholder Reference
+
+### Script Placeholder List (Resolved by `reminderDialog.zsh`)
+
+| Placeholder | Source | Description | Example Output |
+|-------------|--------|-------------|----------------|
+| `{weekday}` | System | Current day of week | Monday |
+| `{userfirstname}` | System | User's first name | Dan |
+| `{loggedInUserFirstname}` | System | User's first name | Dan |
+| `{installedmacOSVersion}` | System | Full macOS version | 15.1.1 |
+| `{ddmVersionString}` | DDM | Required version | 15.2 |
+| `{ddmEnforcedInstallDateHumanReadable}` | DDM | Formatted effective enforcement deadline | Sat, 01-Aug-2026, 8:00 AM |
+| `{ddmEnforcedInstallDateRelativeHumanReadable}` | DDM | Effective deadline with Today/Tomorrow wording when applicable, else formatted deadline | Tomorrow, 6:00 p.m. |
+| `{ddmVersionStringDeadlineHumanReadable}` | DDM | Effective deadline display used in user-facing copy | Today, 3:31 p.m. |
+| `{ddmVersionStringDaysRemaining}` | DDM | Days to effective enforcement deadline used by runtime reminder logic | 14 |
+| `{minutesBeforeDeadline}` | DDM | Active pre-deadline threshold in minutes | 30 |
+| `{aggressiveModeHoursPastDeadline}` | DDM | Whole hours past effective enforcement deadline when aggressive mode is evaluated | 3 |
+| `{aggressiveModeFrequencyMinutes}` | Preferences | Aggressive redisplay interval in minutes | 20 |
+| `{preDeadlineThresholdEmphasisOpen}` | DDM | Opens red markdown emphasis for threshold copy when swiftDialog supports markdown color, else empty | :red[ |
+| `{preDeadlineThresholdEmphasisClose}` | DDM | Closes red markdown emphasis for threshold copy when swiftDialog supports markdown color, else empty | ] |
+| `{titleMessageUpdateOrUpgrade}` | Logic | Update or Upgrade | Update |
+| `{titleMessageUpdateOrUpgradeLower}` | Logic | Lowercase variant | update |
+| `{softwareUpdateButtonText}` | Logic | Expected button label | Update Now |
+| `{uptimeHumanReadable}` | System | Time since restart | 5 days |
+| `{diskSpaceHumanReadable}` | System | Free space | 128.5 GB (45.2% available) |
+| `{updateReadyMessage}` | Logic | Staging status | [Staged update message] |
+| `{excessiveUptimeWarningMessage}` | Logic | Uptime warning | [Warning if triggered] |
+| `{diskSpaceWarningMessage}` | Logic | Disk space warning | [Warning if triggered] |
+| `{supportTeamName}` | Config | Support team | IT Support |
+| `{supportTeamPhone}` | Config | Phone number | +1 (555) 123-4567 |
+| `{supportTeamEmail}` | Config | Email | helpdesk@company.com |
+| `{supportTeamWebsite}` | Config | Website URL | https://support.company.com |
+| `{supportKBURL}` | Config | KB article link | [Link text](URL) |
+| `{supportKB}` | Config | KB article title | Update macOS on Mac |
+| `{supportAssistanceMessage}` | Config | Support guidance suffix for message body | <br><br>For assistance, please contact ... |
+| `{button1text}` | Config | Primary button | Open Software Update |
+| `{button2text}` | Config | Secondary button | Remind Me Later |
+| `{infobuttonaction}` | Config | Info button URL | https://support.apple.com/... |
+| `{dialogVersion}` | System | swiftDialog version | 2.5.6 |
+| `{scriptVersion}` | System | Script version | 4.1.0 |
+
+### swiftDialog Built-in Variables (Resolved by swiftDialog)
+
+These placeholders are resolved at render time by swiftDialog itself. See the full list in the [swiftDialog built-in variables](https://github.com/swiftDialog/swiftDialog/wiki/Builtin-Variables) documentation.
+
+| Placeholder | Used In Defaults | Example Output |
+|-------------|------------------|----------------|
+| `{userfullname}` | HelpMessage | Dan Snelson |
+| `{username}` | HelpMessage | dsnelson |
+| `{computername}` | HelpMessage | Dans-MacBook-Pro |
+| `{serialnumber}` | HelpMessage | C02ABC123DEF |
+| `{osversion}` | HelpMessage | 15.1.1 |
+
+**Note**: `{ddmVersionString}` must be numeric `X.Y` or `X.Y.Z`. Invalid formats suppress reminder dialogs and emit a `[WARNING]` log entry.
+
+**3.2.0 compliance note**: When Apple omits a usable `BuildVersionString` (`(null)`), the runtime and bundled pending-update EAs still treat the device as compliant if the installed macOS product version matches or exceeds the resolved `{ddmVersionString}`.
+
+### Explicit Placeholder Variants
+
+Use the default placeholder when title-case or noun-style wording is needed, and use the explicit lowercase variant when sentence grammar needs it.
+
+**Example**:
+```
+{titleMessageUpdateOrUpgrade} → "Update"
+{titleMessageUpdateOrUpgradeLower} → "update"
+```
+
+### Multi-Pass Resolution
+
+Placeholders can reference other placeholders. The script resolves them in multiple passes (up to 5) until all are replaced.
+
+**Example**:
+```
+supportTeamInfo = "{supportTeamName} - {supportTeamPhone}"
+message = "Contact {supportTeamInfo}"
+```
+
+**Resolves to**: `Contact IT Support - +1 (555) 123-4567`
+
+---
+
+## Common Configuration Scenarios
+
+### Scenario 1: Conservative Deployment (Minimal Disruption)
+
+**Goal**: Later reminders, shorter urgent period, less intrusive
+
+```xml
+<key>DaysBeforeDeadlineDisplayReminder</key>
+<integer>30</integer>
+<key>DaysBeforeDeadlineBlurscreen</key>
+<integer>14</integer>
+<key>DaysBeforeDeadlineHidingButton2</key>
+<integer>7</integer>
+<key>AggressiveModePastDeadlineHours</key>
+<integer>720</integer>
+<key>AggressiveModeFrequencyMinutes</key>
+<integer>20</integer>
+```
+
+**Timeline**:
+- Day -30: First reminder
+- Day -14: Blurscreen activates
+- Day -7: Button 2 disabled
+- Post-deadline aggressive mode effectively suppressed by high hour threshold
+
+---
+
+### Scenario 2: Aggressive Deployment (Maximum Warning)
+
+**Goal**: Earlier reminders, longer urgent period, maximum visibility
+
+```xml
+<key>DaysBeforeDeadlineDisplayReminder</key>
+<integer>90</integer>
+<key>DaysBeforeDeadlineBlurscreen</key>
+<integer>60</integer>
+<key>DaysBeforeDeadlineHidingButton2</key>
+<integer>30</integer>
+<key>AggressiveModePastDeadlineHours</key>
+<integer>1</integer>
+<key>AggressiveModeFrequencyMinutes</key>
+<integer>10</integer>
+```
+
+**Timeline**:
+- Day -90: First reminder (3 months early)
+- Day -60: Blurscreen activates (2 months)
+- Day -30: Button 2 disabled (1 month)
+- Hour +1: Aggressive post-deadline cadence begins if update is still required
+
+---
+
+### Scenario 3: Balanced Deployment (Default)
+
+**Goal**: Reasonable warning with progressive urgency
+
+```xml
+<key>DaysBeforeDeadlineDisplayReminder</key>
+<integer>60</integer>
+<key>DaysBeforeDeadlineBlurscreen</key>
+<integer>45</integer>
+<key>DaysBeforeDeadlineHidingButton2</key>
+<integer>21</integer>
+<key>AggressiveModePastDeadlineHours</key>
+<integer>2</integer>
+<key>AggressiveModeFrequencyMinutes</key>
+<integer>20</integer>
+```
+
+**Timeline**:
+- Day -60: First reminder (2 months)
+- Day -45: Blurscreen activates (1.5 months)
+- Day -21: Button 2 disabled (3 weeks)
+- Hour +2: Aggressive post-deadline cadence begins if update is still required
+
+---
+
+### Scenario 4: Minimal Branding (Text Only)
+
+**Goal**: Simple deployment without custom icons/branding
+
+```xml
+<!-- Hide overlay icon -->
+<key>OrganizationOverlayIconURL</key>
+<string></string>
+
+<!-- Keep simple support info -->
+<key>SupportTeamName</key>
+<string>IT</string>
+
+<!-- Show only phone -->
+<key>SupportTeamPhone</key>
+<string>x1234</string>
+<key>HideSupportTeamEmail</key>
+<true/>
+<key>HideSupportTeamWebsite</key>
+<true/>
+<key>HideSupportKB</key>
+<true/>
+<key>HideSupportAssistanceMessage</key>
+<true/>
+```
+
+---
+
+### Scenario 5: Full Branding (Complete Customization)
+
+**Goal**: Fully branded with organization identity
+
+```xml
+<!-- Custom icon -->
+<key>OrganizationOverlayIconURL</key>
+<string>https://cdn.company.com/it-icon.png</string>
+
+<!-- Complete support details -->
+<key>SupportTeamName</key>
+<string>Enterprise IT Services</string>
+<key>SupportTeamPhone</key>
+<string>+1 (800) 555-HELP</string>
+<key>SupportTeamEmail</key>
+<string>itsupport@company.com</string>
+<key>SupportTeamWebsite</key>
+<string>https://helpdesk.company.com</string>
+
+<!-- Custom KB article -->
+<key>InfoButtonAction</key>
+<string>https://kb.company.com/macos-updates</string>
+<key>SupportKBURL</key>
+<string>[macOS Update Guide](https://kb.company.com/updates)</string>
+
+<!-- Custom messaging -->
+<key>Title</key>
+<string>Company Policy: macOS {ddmVersionString} Required</string>
+```
+
+---
+
+### Scenario 6: Dark Mode Support (Appearance-Aware Branding)
+
+**Goal**: Optimal icon visibility in both Light and Dark appearance modes
+
+```xml
+<!-- Standard light mode icon -->
+<key>OrganizationOverlayIconURL</key>
+<string>https://cdn.company.com/it-icon-light.png</string>
+
+<!-- Dark mode optimized icon -->
+<key>OrganizationOverlayIconURLdark</key>
+<string>https://cdn.company.com/it-icon-dark.png</string>
+
+<!-- Optional: swap icon position for better visibility -->
+<key>SwapOverlayAndLogo</key>
+<false/>
+```
+
+**Behavior**:
+- Automatically detects user's System Settings > Appearance mode
+- Light Mode or Auto (when light): Uses light icon
+- Dark Mode or Auto (when dark): Uses dark icon
+- Respects empty dark URL by falling back to light icon
+
+**Testing**:
+1. Test in Light Mode: System Settings > Appearance > Light
+2. Test in Dark Mode: System Settings > Appearance > Dark
+3. Test in Auto Mode: Toggle between light/dark times
+
+---
+
+### Scenario 7: User-Friendly (Helpful Context)
+
+**Goal**: Maximum user assistance and transparency
+
+```xml
+<!-- Show staging information -->
+<key>HideStagedUpdateInfo</key>
+<false/>
+
+<!-- Enable uptime warnings -->
+<key>DaysOfExcessiveUptimeWarning</key>
+<integer>7</integer>
+
+<!-- Enable disk space warnings -->
+<key>MinimumDiskFreePercentage</key>
+<integer>20</integer>
+
+<!-- Generous meeting delay -->
+<key>MeetingDelay</key>
+<integer>120</integer>
+```
+
+---
+
+### Scenario 8: Self-Service Portal Only
+
+**Goal**: Keep info button + portal access while hiding direct contact rows
+
+```xml
+<key>InfoButtonText</key>
+<string>Support Portal</string>
+<key>InfoButtonAction</key>
+<string>https://support.company.com</string>
+<key>HideSupportTeamPhone</key>
+<true/>
+<key>HideSupportTeamEmail</key>
+<true/>
+<key>HideSupportTeamWebsite</key>
+<true/>
+<key>HideSupportKB</key>
+<true/>
+```
+
+---
+
+## Configuration Methods
+
+### Method 1: Configuration Profile (Managed Preferences)
+
+**Priority**: Highest (overrides all others)
+**Deployment**: Via MDM
+**Modifiable**: No (enforced by MDM)
+
+**When to Use**:
+- Organization-wide enforcement
+- Compliance requirements
+- Large deployments (100+ devices)
+- Preventing local modifications
+
+**Example**: See [sample.plist](../Resources/sample.plist) and use `assemble.zsh` to generate .mobileconfig
+
+**Deploying in Jamf Pro**:
+1. Upload .mobileconfig to Configuration Profiles
+2. Scope to target computers
+3. Deploy
+
+**Deploying in Intune**:
+1. Devices → macOS → Configuration profiles
+2. Import .mobileconfig
+3. Assign to devices
+
+---
+
+### Method 2: Local Preferences
+
+**Priority**: Medium (overridden by managed preferences)
+**Deployment**: Manual or via script
+**Modifiable**: Yes (with admin privileges)
+
+**When to Use**:
+- Testing before MDM deployment
+- Small deployments (<10 devices)
+- Site-specific overrides
+- Development/testing
+
+**Bulk Configuration Script**:
+```bash
+#!/bin/bash
+
+PLIST="/Library/Preferences/org.churchofjesuschrist.dorm"
+
+# Timing
+sudo defaults write "$PLIST" DaysBeforeDeadlineDisplayReminder -int 60
+sudo defaults write "$PLIST" DaysBeforeDeadlineBlurscreen -int 45
+sudo defaults write "$PLIST" DaysBeforeDeadlineHidingButton2 -int 21
+
+# Support
+sudo defaults write "$PLIST" SupportTeamName -string "IT Support"
+sudo defaults write "$PLIST" SupportTeamPhone -string "+1 (555) 123-4567"
+sudo defaults write "$PLIST" SupportTeamEmail -string "help@company.com"
+
+# Branding
+sudo defaults write "$PLIST" OrganizationOverlayIconURL -string "https://cdn.company.com/icon.png"
+sudo defaults write "$PLIST" SwapOverlayAndLogo -bool NO
+```
+
+---
+
+### Method 3: Script Defaults
+
+**Priority**: Lowest (fallback only)
+**Deployment**: Embedded in script
+**Modifiable**: Only by re-customizing and re-assembling script
+
+**When to Use**:
+- Establishing baseline values
+- Ensuring script always has valid configuration
+- One-time deployment without ongoing management
+
+**Customization Location**: [reminderDialog.zsh](../reminderDialog.zsh) lines ~150-210
+
+**Format**:
+```bash
+declare -A preferenceConfiguration=(
+    ["variableName"]="type|defaultValue"
+)
+```
+
+---
+
+### Method 4: Hybrid Approach (Recommended)
+
+**Strategy**: Combine all three methods
+
+1. **Script Defaults**: Sensible baseline values
+2. **Configuration Profile**: Enforce critical settings (timing, branding)
+3. **Local Preferences**: Testing and site-specific overrides
+
+**Example**:
+```
+Script Default: DaysBeforeDeadlineDisplayReminder = 60
+Config Profile: DaysBeforeDeadlineDisplayReminder = 45 (enforced org-wide)
+Test Mac Local: DaysBeforeDeadlineDisplayReminder = 7 (testing only)
+
+Production Macs: Use 45 (from profile)
+Test Mac: Use 7 (local override for testing)
+```
+
+---
+
+## Troubleshooting
+
+### Variables Not Taking Effect
+
+**Problem**: Changed preference but dialog still shows old value
+
+**Diagnosis**:
+```bash
+# Check managed preferences
+sudo /usr/libexec/PlistBuddy -c "Print :DaysBeforeDeadlineDisplayReminder" \
+    /Library/Managed\ Preferences/org.churchofjesuschrist.dorm.plist
+
+# Check local preferences
+sudo /usr/libexec/PlistBuddy -c "Print :DaysBeforeDeadlineDisplayReminder" \
+    /Library/Preferences/org.churchofjesuschrist.dorm.plist
+
+# Check which was loaded
+grep "Reading preference overrides" /var/log/org.churchofjesuschrist.log
+```
+
+**Solution**: Remember precedence order: Managed → Local → Default
+
+---
+
+### Type Mismatch Errors
+
+**Problem**: Preference not loading due to wrong data type
+
+**Common Mistakes**:
+```xml
+<!-- WRONG: Integer as string -->
+<key>DaysBeforeDeadlineDisplayReminder</key>
+<string>60</string>
+
+<!-- CORRECT: Integer as integer -->
+<key>DaysBeforeDeadlineDisplayReminder</key>
+<integer>60</integer>
+
+<!-- WRONG: Boolean as string -->
+<key>SwapOverlayAndLogo</key>
+<string>YES</string>
+
+<!-- CORRECT: Boolean as boolean -->
+<key>SwapOverlayAndLogo</key>
+<true/>
+```
+
+**Validation**:
+```bash
+# Validate plist syntax
+plutil -lint /path/to/config.plist
+
+# Check data types
+plutil -p /path/to/config.plist
+
+# Compare two plists by normalized values
+diff -u <(plutil -p OLD.plist) <(plutil -p NEW.plist)
+```
+
+---
+
+### Placeholder Not Resolving
+
+**Problem**: Placeholder appears as literal text in dialog
+
+**Causes**:
+1. Typo in placeholder name (case-sensitive)
+2. Placeholder not available in that context
+3. Multi-pass resolution limit reached (>5 levels deep)
+
+**Diagnosis**:
+```bash
+# Check script logs for placeholder resolution
+grep "replacePlaceholders" /var/log/org.churchofjesuschrist.log
+```
+
+**Solution**: Verify placeholder spelling and context
+
+---
+
+### Configuration Profile Not Applying
+
+**Problem**: Profile installed but preferences not in managed location
+
+**Diagnosis**:
+```bash
+# Check profile installation
+sudo profiles show
+
+# Check managed preferences directory
+ls -la /Library/Managed\ Preferences/
+
+# Verify plist domain matches
+cat /Library/Managed\ Preferences/org.churchofjesuschrist.dorm.plist
+```
+
+**Solution**: Ensure the profile domain matches your deployed preference domain (for example, `org.churchofjesuschrist.dorm` or your customized RDNN + `.dorm`).
+
+---
+
+### HTML Entities in Dialog
+
+**Problem**: Dialog shows `&lt;br&gt;` instead of line breaks
+
+**Cause**: Configuration Profile requires HTML entity encoding
+
+**Solution**:
+```xml
+<!-- Encode HTML in Configuration Profile -->
+<string>&lt;br&gt;&lt;br&gt;**Bold text**</string>
+
+<!-- Direct plist (if manually creating) can use literal -->
+<string><br><br>**Bold text**</string>
+```
+
+**Encoding Guide**:
+- `<` → `&lt;`
+- `>` → `&gt;`
+- `&` → `&amp;`
+- `"` → `&quot;`
+
+---
+
+### Boolean Values Not Recognized
+
+**Problem**: Boolean preference not working
+
+**Recommended Values by Method**:
+- Configuration Profile XML: `<true/>` or `<false/>`
+- `defaults write`: `-bool YES` or `-bool NO`
+- Script defaults (`preferenceConfiguration`): `"boolean|YES"` or `"boolean|NO"`
+
+**Also Tolerated at Runtime**:
+- `1` / `0`
+- `true` / `false`
+- `yes` / `no` (case-insensitive)
+
+**Important**: String booleans (for example `<string>YES</string>`) may still be normalized by the script, but they are not recommended because they are easy to misread and can fail stricter plist validation/policy checks.
+
+---
+
+## Related Documentation
+
+- [System Architecture](01-system-architecture.md) - Complete ecosystem overview
+- [Runtime Decision Tree](02-runtime-decision-tree.md) - How variables affect script logic
+- [Deadline Timeline](03-deadline-timeline.md) - Visual representation of timing variables
+- [Deployment Workflow](04-deployment-workflow.md) - How to deploy configurations
+- [Configuration Hierarchy](05-configuration-hierarchy.md) - Preference precedence system
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 4.1.0b3 | 30-Jul-2026 | Documented Missing-DDM Emergency Fallback schema, exact-`missing` precedence, lifecycle boundaries, and threshold signature behavior |
+| 4.1.0b3 | 30-Jul-2026 | Updated current-version metadata for LaunchDaemon quarantine hardening; no preference keys or precedence rules changed |
+| 4.1.0 | 03-Aug-2026 | Documented active-runtime teardown during controlled redeployment, fallback decision/activation audit logging, and rotated `install.log` collection guidance; no preference keys or precedence rules changed |
+| 4.0.0 | 28-Jul-2026 | Documented `PreDeadlineThresholdSignature` format, declaration identity fields, `(null)` build handling, effective-enforcement epoch semantics, delivered/skipped ledger reset behavior, and operational interpretation |
+| 4.0.0 | 10-Jul-2026 | Clarified quiet-period scheduling: baseline runs inside `QuietPeriodMinutes` exit quietly and write exact `NextScheduledReminder` for quiet-period expiry, including after prior Button 1 interaction |
+| 4.0.0 | 08-Jul-2026 | Added `QuietPeriodMinutes`, `OutsideDisplayWindowPeriodicReminderDays`, `DisableButton2InsteadOfHide`, `PastDeadlineRestartMinimumUptimeMinutes`, `PastDeadlineForceTimerSeconds`, and `PastDeadlineForceRedisplayDelaySeconds` reference coverage |
+| 4.0.0 | 08-Jul-2026 | Clarified `NextScheduledReminder` reboot behavior: future-dated runtime schedule survives reboot and `RunAtLoad` exits quietly until due |
+| 4.0.0 | 08-Jul-2026 | Added aggressive-mode timing keys, title/message localized families, kill-switch guidance, and `{aggressiveModeHoursPastDeadline}` / `{aggressiveModeFrequencyMinutes}` placeholders |
+| 4.0.0 | 08-Jul-2026 | Updated `MinutesBeforeDeadlineReminderSchedule` source fallback, sample/profile default, and documentation to `45,30,15,10,5` |
+| 4.0.0 | 08-Jul-2026 | Added `MinutesBeforeDeadlineReminderSchedule`, pre-deadline threshold copy keys, `{minutesBeforeDeadline}`, and threshold runtime-state references |
+| 4.0.0 | 08-Jul-2026 | Added `DailyReminderTimes` reference coverage and clarified that runtime scheduler state (`NextScheduledReminder`, `DaemonLastTriggered`) lives in `/Library/Management/<rdnn>/dor-state.plist`, outside managed/local preference payloads |
+ 3.0.0 | 29-Mar-2026 | Clarified documentation alignment with the hardened DDM resolver, fail-closed EA behavior, and current beta-series runtime behavior |
+| 2.3.0 | 19-Jan-2026 | Initial configuration reference documentation |
+| 2.5.0 | 14-Feb-2026 | Updated staged-update criteria documentation to reflect proposed metadata validation and pending-download normalization behavior |
+| 2.6.0 | 01-Mar-2026 | Added `pastDeadlineRestartBehavior` and `daysPastDeadlineRestartWorkflow` documentation; clarified KB hide behavior and documented the 75-minute minimum uptime eligibility for restart workflow |
+| 3.0.0 | 28-Mar-2026 | Added localization documentation (`LanguageOverride`, localized key families, fallback chain), plus localized support-assistance coverage and merged 2.6.0 behavior references |
+| 3.0.0 | 28-Mar-2026 | Added locale-aware deadline date token behavior and Swiss-format example for `DateFormatDeadlineHumanReadable` |
+| 3.0.0 | 28-Mar-2026 | Documented prior-plist upgrade-assist coverage around `2.2.0+`, plus best-effort import warnings for older/metadata-light plists and the lane-suffix requirement for automatic deployment-mode inference during assembly |
+| 3.3.0 | 21-May-2026 | Replaced legacy `:l` placeholder examples with explicit lowercase placeholder variants, added the natural Japanese `DateFormatDeadlineHumanReadableLocalized_ja` sample override, and aligned German sample wording with `macOS-Update` noun usage |
+| 3.3.0 | 14-May-2026 | Added region-aware `DateFormatDeadlineHumanReadableLocalized_<code>` overrides with exact locale -> base language -> global fallback behavior, plus matching relative `Today` / `Tomorrow` time-format guidance |
+| 3.2.0 | 30-Mar-2026 | Added Dutch (`nl`) as a fully supported language: `LanguageOverride` gains `nl`, all localized key families gain `*Localized_nl` variants, and `auto` detection now normalizes `nl-*`/`nl_*` locales. Externalized hard-coded runtime strings into plist-backed families (section 9): `RelativeDeadlineToday/Tomorrow`, `UpdateWord`, `UpgradeWord`, `SoftwareUpdateButtonTextUpdate/Upgrade`, `RestartNowButtonText`, six `InfoboxLabel*` keys, `DeadlineEnforcementMessageAbsolute/Relative`, and four `PastDeadline*` keys. Updated quick reference table, localized key families list, and added section 9 (Dynamic Localization Primitives). |
+| 3.2.0 | 06-Apr-2026 | Clarified final-release metadata and documented that runtime plus bundled pending-update EAs treat a matching or trailing `VersionString` as compliant when Apple omits a usable `BuildVersionString`; no new preference keys were added in this release |
+---
+
+**Last Updated**: 03-Aug-2026
+**DDM OS Reminder Version**: 4.1.0

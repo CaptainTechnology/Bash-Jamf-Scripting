@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AcceptableAssertionApplicationNames</key>
+	<string>MSTeams zoom.us Webex</string>
+	<key>AggressiveModeFrequencyMinutes</key>
+	<integer>30</integer>
+	<key>AggressiveModeMessage</key>
+	<string>**Your Mac is past its required macOS {titleMessageUpdateOrUpgradeLower} deadline.**&lt;br&gt;&lt;br&gt;Happy {weekday}, {loggedInUserFirstname}!&lt;br&gt;&lt;br&gt;Your Mac has been past the **{ddmVersionStringDeadlineHumanReadable}** deadline for **{aggressiveModeHoursPastDeadline} hour(s)** and still needs macOS {ddmVersionString}.&lt;br&gt;&lt;br&gt;Click **{button1text}**, review the on-screen instructions, then click **{softwareUpdateButtonText}**. This reminder will return about every {aggressiveModeFrequencyMinutes} minutes until macOS {ddmVersionString} is installed.{updateReadyMessage}{excessiveUptimeWarningMessage}{diskSpaceWarningMessage}{supportAssistanceMessage}</string>
+	<key>AggressiveModeMessageLocalized_en</key>
+	<string>**Your Mac is past its required macOS {titleMessageUpdateOrUpgradeLower} deadline.**&lt;br&gt;&lt;br&gt;Happy {weekday}, {loggedInUserFirstname}!&lt;br&gt;&lt;br&gt;Your Mac has been past the **{ddmVersionStringDeadlineHumanReadable}** deadline for **{aggressiveModeHoursPastDeadline} hour(s)** and still needs macOS {ddmVersionString}.&lt;br&gt;&lt;br&gt;Click **{button1text}**, review the on-screen instructions, then click **{softwareUpdateButtonText}**. This reminder will return about every {aggressiveModeFrequencyMinutes} minutes until macOS {ddmVersionString} is installed.{updateReadyMessage}{excessiveUptimeWarningMessage}{diskSpaceWarningMessage}{supportAssistanceMessage}</string>
+	<key>AggressiveModePastDeadlineHours</key>
+	<integer>2</integer>
+	<key>AggressiveModeTitle</key>
+	<string>macOS {titleMessageUpdateOrUpgrade} Required Now</string>
+	<key>AggressiveModeTitleLocalized_en</key>
+	<string>macOS {titleMessageUpdateOrUpgrade} Required Now</string>
+	<key>Button1Text</key>
+	<string>Open Software Update</string>
+	<key>Button1TextLocalized_en</key>
+	<string>Open Software Update</string>
+	<key>Button2Text</key>
+	<string>Remind Me Later</string>
+	<key>Button2TextLocalized_en</key>
+	<string>Remind Me Later</string>
+	<key>DailyReminderTimes</key>
+	<string>08:00,12:00,16:00</string>
+	<key>DateFormatDeadlineHumanReadable</key>
+	<string>+%a, %d-%b-%Y, %-l:%M %p</string>
+	<key>DaysBeforeDeadlineBlurscreen</key>
+	<integer>3</integer>
+	<key>DaysBeforeDeadlineDisplayReminder</key>
+	<integer>14</integer>
+	<key>DaysBeforeDeadlineHidingButton2</key>
+	<integer>1</integer>
+	<key>DaysOfExcessiveUptimeWarning</key>
+	<integer>7</integer>
+	<key>DaysPastDeadlineRestartWorkflow</key>
+	<integer>2</integer>
+	<key>DeadlineEnforcementMessageAbsolute</key>
+	<string>However, your Mac **will automatically restart and {titleMessageUpdateOrUpgradeLower}** on **{deadlineDisplay}** if you have not {titleMessageUpdateOrUpgradeLower}d before the deadline.</string>
+	<key>DeadlineEnforcementMessageAbsoluteLocalized_en</key>
+	<string>However, your Mac **will automatically restart and {titleMessageUpdateOrUpgradeLower}** on **{deadlineDisplay}** if you have not {titleMessageUpdateOrUpgradeLower}d before the deadline.</string>
+	<key>DeadlineEnforcementMessageRelative</key>
+	<string>However, your Mac **will automatically restart and {titleMessageUpdateOrUpgradeLower}** **{deadlineDisplay}** if you have not {titleMessageUpdateOrUpgradeLower}d before the deadline.</string>
+	<key>DeadlineEnforcementMessageRelativeLocalized_en</key>
+	<string>However, your Mac **will automatically restart and {titleMessageUpdateOrUpgradeLower}** **{deadlineDisplay}** if you have not {titleMessageUpdateOrUpgradeLower}d before the deadline.</string>
+	<key>DisableButton2InsteadOfHide</key>
+	<true/>
+	<key>DiskSpaceWarningMessage</key>
+	<string>&lt;br&gt;&lt;br&gt;**Note:** Your Mac has only **{diskSpaceHumanReadable}**, which may prevent this macOS {titleMessageUpdateOrUpgradeLower}.</string>
+	<key>DiskSpaceWarningMessageLocalized_en</key>
+	<string>&lt;br&gt;&lt;br&gt;**Note:** Your Mac has only **{diskSpaceHumanReadable}**, which may prevent this macOS {titleMessageUpdateOrUpgradeLower}.</string>
+	<key>ExcessiveUptimeWarningMessage</key>
+	<string>&lt;br&gt;&lt;br&gt;**Note:** Your Mac has been powered-on for **{uptimeHumanReadable}**. For more reliable results, please manually restart your Mac before proceeding.</string>
+	<key>ExcessiveUptimeWarningMessageLocalized_en</key>
+	<string>&lt;br&gt;&lt;br&gt;**Note:** Your Mac has been powered-on for **{uptimeHumanReadable}**. For more reliable results, please manually restart your Mac before proceeding.</string>
+	<key>HelpImage</key>
+	<string>qr={infobuttonaction}</string>
+	<key>HelpMessage</key>
+	<string>&lt;br&gt;&lt;br&gt;For assistance, please contact: **{supportTeamName}**&lt;br&gt;- **Telephone:** {supportTeamPhone}&lt;br&gt;- **Email:** {supportTeamEmail}&lt;br&gt;- **Website:** {supportTeamWebsite}&lt;br&gt;- **Knowledge Base Article:** {supportKBURL}&lt;br&gt;&lt;br&gt;**User Information:**&lt;br&gt;- **Full Name:** {userfullname}&lt;br&gt;- **User Name:** {username}&lt;br&gt;&lt;br&gt;**Computer Information:**&lt;br&gt;- **Computer Name:** {computername}&lt;br&gt;- **Serial Number:** {serialnumber}&lt;br&gt;- **macOS:** {osversion}&lt;br&gt;&lt;br&gt;**Script Information:**&lt;br&gt;- **Dialog:** {dialogVersion}&lt;br&gt;- **Script:** {scriptVersion}&lt;br&gt;</string>
+	<key>HelpMessageLocalized_en</key>
+	<string>&lt;br&gt;&lt;br&gt;For assistance, please contact: **{supportTeamName}**&lt;br&gt;- **Telephone:** {supportTeamPhone}&lt;br&gt;- **Email:** {supportTeamEmail}&lt;br&gt;- **Website:** {supportTeamWebsite}&lt;br&gt;- **Knowledge Base Article:** {supportKBURL}&lt;br&gt;&lt;br&gt;**User Information:**&lt;br&gt;- **Full Name:** {userfullname}&lt;br&gt;- **User Name:** {username}&lt;br&gt;&lt;br&gt;**Computer Information:**&lt;br&gt;- **Computer Name:** {computername}&lt;br&gt;- **Serial Number:** {serialnumber}&lt;br&gt;- **macOS:** {osversion}&lt;br&gt;&lt;br&gt;**Script Information:**&lt;br&gt;- **Dialog:** {dialogVersion}&lt;br&gt;- **Script:** {scriptVersion}&lt;br&gt;</string>
+	<key>HideStagedUpdateInfo</key>
+	<false/>
+	<key>HideSupportAssistanceMessage</key>
+	<true/>
+	<key>HideSupportKB</key>
+	<false/>
+	<key>HideSupportTeamEmail</key>
+	<false/>
+	<key>HideSupportTeamPhone</key>
+	<false/>
+	<key>HideSupportTeamWebsite</key>
+	<false/>
+	<key>InfoBox</key>
+	<string>&lt;br&gt;&lt;br&gt;**{infoboxLabelCurrent}:** macOS {installedmacOSVersion}&lt;br&gt;&lt;br&gt;**{infoboxLabelRequired}:** macOS {ddmVersionString}&lt;br&gt;&lt;br&gt;**{infoboxLabelDeadline}:** {infoboxDeadlineDisplay}&lt;br&gt;&lt;br&gt;**{infoboxLabelDaysRemaining}:** {infoboxDaysRemainingDisplay}&lt;br&gt;&lt;br&gt;**{infoboxLabelLastRestart}:** {infoboxLastRestartDisplay}&lt;br&gt;&lt;br&gt;**{infoboxLabelFreeDiskSpace}:** {diskSpaceHumanReadable}</string>
+	<key>InfoButtonAction</key>
+	<string>https://support.apple.com/en-in/122868</string>
+	<key>InfoButtonText</key>
+	<string>macOS Update</string>
+	<key>InfoButtonTextLocalized_en</key>
+	<string>macOS Update</string>
+	<key>InfoboxLabelCurrent</key>
+	<string>Current</string>
+	<key>InfoboxLabelCurrentLocalized_en</key>
+	<string>Current</string>
+	<key>InfoboxLabelDaysRemaining</key>
+	<string>Day(s) Remaining</string>
+	<key>InfoboxLabelDaysRemainingLocalized_en</key>
+	<string>Day(s) Remaining</string>
+	<key>InfoboxLabelDeadline</key>
+	<string>Deadline</string>
+	<key>InfoboxLabelDeadlineLocalized_en</key>
+	<string>Deadline</string>
+	<key>InfoboxLabelFreeDiskSpace</key>
+	<string>Free Disk Space</string>
+	<key>InfoboxLabelFreeDiskSpaceLocalized_en</key>
+	<string>Free Disk Space</string>
+	<key>InfoboxLabelLastRestart</key>
+	<string>Last Restart</string>
+	<key>InfoboxLabelLastRestartLocalized_en</key>
+	<string>Last Restart</string>
+	<key>InfoboxLabelRequired</key>
+	<string>Required</string>
+	<key>InfoboxLabelRequiredLocalized_en</key>
+	<string>Required</string>
+	<key>LanguageOverride</key>
+	<string>auto</string>
+	<key>MeetingDelay</key>
+	<integer>75</integer>
+	<key>Message</key>
+	<string>**A required macOS {titleMessageUpdateOrUpgradeLower} is now available**&lt;br&gt;&lt;br&gt;Greetings, {loggedInUserFirstname}!&lt;br&gt;&lt;br&gt;Please {titleMessageUpdateOrUpgradeLower} to macOS **{ddmVersionString}** to ensure your Mac remains secure and compliant with organizational policies.{updateReadyMessage}&lt;br&gt;&lt;br&gt;To perform the {titleMessageUpdateOrUpgradeLower} now, click **{button1text}**, review the on-screen instructions, then click **{softwareUpdateButtonText}**.&lt;br&gt;&lt;br&gt;If you are unable to perform this {titleMessageUpdateOrUpgradeLower} now, click **{button2text}** to be reminded again later (which is disabled when the deadline is imminent).&lt;br&gt;&lt;br&gt;{deadlineEnforcementMessage}{excessiveUptimeWarningMessage}{diskSpaceWarningMessage}{supportAssistanceMessage}</string>
+	<key>MessageLocalized_en</key>
+	<string>**A required macOS {titleMessageUpdateOrUpgradeLower} is now available**&lt;br&gt;&lt;br&gt;Greetings, {loggedInUserFirstname}!&lt;br&gt;&lt;br&gt;Please {titleMessageUpdateOrUpgradeLower} to macOS **{ddmVersionString}** to ensure your Mac remains secure and compliant with organizational policies.{updateReadyMessage}&lt;br&gt;&lt;br&gt;To perform the {titleMessageUpdateOrUpgradeLower} now, click **{button1text}**, review the on-screen instructions, then click **{softwareUpdateButtonText}**.&lt;br&gt;&lt;br&gt;If you are unable to perform this {titleMessageUpdateOrUpgradeLower} now, click **{button2text}** to be reminded again later (which is disabled when the deadline is imminent).&lt;br&gt;&lt;br&gt;{deadlineEnforcementMessage}{excessiveUptimeWarningMessage}{diskSpaceWarningMessage}{supportAssistanceMessage}</string>
+	<key>MinimumDiskFreePercentage</key>
+	<integer>10</integer>
+	<key>MinutesBeforeDeadlineReminderSchedule</key>
+	<string>45,30,15,10,5</string>
+	<key>OrganizationOverlayIconURL</key>
+	<string>/usr/local/JamfConnectCustomizations/images/TILoginWindowLogo.png</string>
+	<key>OrganizationOverlayIconURLdark</key>
+	<string>/usr/local/JamfConnectCustomizations/images/TILoginWindowLogo.png</string>
+	<key>OutsideDisplayWindowPeriodicReminderDays</key>
+	<integer>28</integer>
+	<key>PartiallyStagedUpdateMessage</key>
+	<string>&lt;br&gt;&lt;br&gt;Your Mac has begun downloading and preparing required macOS update components. Installation will be quicker once all assets have finished staging.</string>
+	<key>PartiallyStagedUpdateMessageLocalized_en</key>
+	<string>&lt;br&gt;&lt;br&gt;Your Mac has begun downloading and preparing required macOS update components. Installation will be quicker once all assets have finished staging.</string>
+	<key>PastDeadlineForceMessage</key>
+	<string>**Your Mac will restart when the timer below expires.**&lt;br&gt;&lt;br&gt;Happy {weekday}, {loggedInUserFirstname}!&lt;br&gt;&lt;br&gt;Your Mac is past the **{ddmVersionStringDeadlineHumanReadable}** deadline to install macOS {ddmVersionString} and needs to be restarted to help the {titleMessageUpdateOrUpgradeLower} process to complete, or you can click **{button1text}**.&lt;br&gt;&lt;br&gt;(This reminder will persist until your Mac has been restarted.)</string>
+	<key>PastDeadlineForceMessageLocalized_en</key>
+	<string>**Your Mac will restart when the timer below expires.**&lt;br&gt;&lt;br&gt;Happy {weekday}, {loggedInUserFirstname}!&lt;br&gt;&lt;br&gt;Your Mac is past the **{ddmVersionStringDeadlineHumanReadable}** deadline to install macOS {ddmVersionString} and needs to be restarted to help the {titleMessageUpdateOrUpgradeLower} process to complete, or you can click **{button1text}**.&lt;br&gt;&lt;br&gt;(This reminder will persist until your Mac has been restarted.)</string>
+	<key>PastDeadlineForceRedisplayDelaySeconds</key>
+	<integer>5</integer>
+	<key>PastDeadlineForceTimerSeconds</key>
+	<integer>60</integer>
+	<key>PastDeadlineForceTitle</key>
+	<string>Your Mac is restarting</string>
+	<key>PastDeadlineForceTitleLocalized_en</key>
+	<string>Your Mac is restarting</string>
+	<key>PastDeadlinePromptMessage</key>
+	<string>**Please restart your Mac now**&lt;br&gt;&lt;br&gt;Happy {weekday}, {loggedInUserFirstname}!&lt;br&gt;&lt;br&gt;Your Mac is past the **{ddmVersionStringDeadlineHumanReadable}** deadline to {titleMessageUpdateOrUpgradeLower} to macOS {ddmVersionString}.&lt;br&gt;&lt;br&gt;Click **{button1text}** to restart now to help complete the required {titleMessageUpdateOrUpgradeLower}.&lt;br&gt;&lt;br&gt;(This reminder will persist until your Mac has been restarted.)</string>
+	<key>PastDeadlinePromptMessageLocalized_en</key>
+	<string>**Please restart your Mac now**&lt;br&gt;&lt;br&gt;Happy {weekday}, {loggedInUserFirstname}!&lt;br&gt;&lt;br&gt;Your Mac is past the **{ddmVersionStringDeadlineHumanReadable}** deadline to {titleMessageUpdateOrUpgradeLower} to macOS {ddmVersionString}.&lt;br&gt;&lt;br&gt;Click **{button1text}** to restart now to help complete the required {titleMessageUpdateOrUpgradeLower}.&lt;br&gt;&lt;br&gt;(This reminder will persist until your Mac has been restarted.)</string>
+	<key>PastDeadlinePromptTitle</key>
+	<string>Restart Your Mac</string>
+	<key>PastDeadlinePromptTitleLocalized_en</key>
+	<string>Restart Your Mac</string>
+	<key>PastDeadlineRestartBehavior</key>
+	<string>Force</string>
+	<key>PastDeadlineRestartMinimumUptimeMinutes</key>
+	<integer>75</integer>
+	<key>PendingDownloadMessage</key>
+	<string>&lt;br&gt;&lt;br&gt;Your Mac will begin downloading the update shortly.</string>
+	<key>PendingDownloadMessageLocalized_en</key>
+	<string>&lt;br&gt;&lt;br&gt;Your Mac will begin downloading the update shortly.</string>
+	<key>PreDeadlineThresholdMessage</key>
+	<string>**{preDeadlineThresholdEmphasisOpen}Your Mac reaches the macOS {ddmVersionString} enforcement deadline in {minutesBeforeDeadline} minutes.{preDeadlineThresholdEmphasisClose}**&lt;br&gt;&lt;br&gt;Greetings, {loggedInUserFirstname}!&lt;br&gt;&lt;br&gt;{preDeadlineThresholdEmphasisOpen}Please {titleMessageUpdateOrUpgradeLower} to macOS {ddmVersionString} now to avoid the automatic enforcement action at {ddmVersionStringDeadlineHumanReadable}.{preDeadlineThresholdEmphasisClose}{updateReadyMessage}&lt;br&gt;&lt;br&gt;To perform the {titleMessageUpdateOrUpgradeLower} now, click **{button1text}**, review the on-screen instructions, then click **{softwareUpdateButtonText}**.{excessiveUptimeWarningMessage}{diskSpaceWarningMessage}{supportAssistanceMessage}</string>
+	<key>PreDeadlineThresholdMessageLocalized_en</key>
+	<string>**{preDeadlineThresholdEmphasisOpen}Your Mac reaches the macOS {ddmVersionString} enforcement deadline in {minutesBeforeDeadline} minutes.{preDeadlineThresholdEmphasisClose}**&lt;br&gt;&lt;br&gt;Greetings, {loggedInUserFirstname}!&lt;br&gt;&lt;br&gt;{preDeadlineThresholdEmphasisOpen}Please {titleMessageUpdateOrUpgradeLower} to macOS {ddmVersionString} now to avoid the automatic enforcement action at {ddmVersionStringDeadlineHumanReadable}.{preDeadlineThresholdEmphasisClose}{updateReadyMessage}&lt;br&gt;&lt;br&gt;To perform the {titleMessageUpdateOrUpgradeLower} now, click **{button1text}**, review the on-screen instructions, then click **{softwareUpdateButtonText}**.{excessiveUptimeWarningMessage}{diskSpaceWarningMessage}{supportAssistanceMessage}</string>
+	<key>PreDeadlineThresholdTitle</key>
+	<string>macOS {titleMessageUpdateOrUpgrade} Deadline Soon</string>
+	<key>PreDeadlineThresholdTitleLocalized_en</key>
+	<string>macOS {titleMessageUpdateOrUpgrade} Deadline Soon</string>
+	<key>QuietPeriodMinutes</key>
+	<integer>76</integer>
+	<key>RelativeDeadlineToday</key>
+	<string>Today</string>
+	<key>RelativeDeadlineTodayLocalized_en</key>
+	<string>Today</string>
+	<key>RelativeDeadlineTomorrow</key>
+	<string>Tomorrow</string>
+	<key>RelativeDeadlineTomorrowLocalized_en</key>
+	<string>Tomorrow</string>
+	<key>RestartNowButtonText</key>
+	<string>Restart Now</string>
+	<key>RestartNowButtonTextLocalized_en</key>
+	<string>Restart Now</string>
+	<key>ScriptLog</key>
+	<string>/var/log/com.anees.log</string>
+	<key>SoftwareUpdateButtonTextUpdate</key>
+	<string>Restart Now</string>
+	<key>SoftwareUpdateButtonTextUpdateLocalized_en</key>
+	<string>Restart Now</string>
+	<key>SoftwareUpdateButtonTextUpgrade</key>
+	<string>Upgrade Now</string>
+	<key>SoftwareUpdateButtonTextUpgradeLocalized_en</key>
+	<string>Upgrade Now</string>
+	<key>StagedUpdateMessage</key>
+	<string>&lt;br&gt;&lt;br&gt;**Good news!** The macOS {ddmVersionString} update has already been downloaded to your Mac and is ready to install. Installation will proceed quickly when you click **{button1text}**.</string>
+	<key>StagedUpdateMessageLocalized_en</key>
+	<string>&lt;br&gt;&lt;br&gt;**Good news!** The macOS {ddmVersionString} update has already been downloaded to your Mac and is ready to install. Installation will proceed quickly when you click **{button1text}**.</string>
+	<key>SupportAssistanceMessage</key>
+	<string>&lt;br&gt;&lt;br&gt;For assistance, please contact **{supportTeamName}** by clicking the (?) button in the bottom, right-hand corner.</string>
+	<key>SupportAssistanceMessageLocalized_en</key>
+	<string>&lt;br&gt;&lt;br&gt;For assistance, please contact **{supportTeamName}** by clicking the (?) button in the bottom, right-hand corner.</string>
+	<key>SupportKB</key>
+	<string>KB Article</string>
+	<key>SupportKBURL</key>
+	<string>https://support.apple.com/en-in/122868</string>
+	<key>SupportTeamEmail</key>
+	<string>support@orhantech.in</string>
+	<key>SupportTeamName</key>
+	<string>IT Support</string>
+	<key>SupportTeamPhone</key>
+	<string>+918858258387</string>
+	<key>SupportTeamWebsite</key>
+	<string>https://support.apple.com/en-in/122868</string>
+	<key>SwapOverlayAndLogo</key>
+	<true/>
+	<key>Title</key>
+	<string>macOS {titleMessageUpdateOrUpgrade} Required</string>
+	<key>TitleLocalized_en</key>
+	<string>macOS {titleMessageUpdateOrUpgrade} Required</string>
+	<key>UpdateWord</key>
+	<string>Update</string>
+	<key>UpdateWordLocalized_en</key>
+	<string>Update</string>
+	<key>UpgradeWord</key>
+	<string>Upgrade</string>
+	<key>UpgradeWordLocalized_en</key>
+	<string>Upgrade</string>
+</dict>
+</plist>
