@@ -18,6 +18,11 @@ sudo rm -rf /Users/Admin -> delete user as well as home folder
 /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate off
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 
 
+sudo tccutil reset SystemPolicyAllFiles # reset the system full disk access prefrenses
+sudo tccutil reset All com.microsoft.VSCode # for specific appliation full disk acess will be reset
+sudo tccutil reset All com.google.Chrome
+sudo jamf recon
+sudo jamf policy
 
 # csrutil disable -> disable the SIP
 
