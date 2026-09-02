@@ -6,7 +6,7 @@ import os
 load_dotenv()
 
 print(load_dotenv())
-Jamf_url=os.getenv("JAMF_URL","").rstrip("/") # remove /from last if exist
+Jamf_url=os.getenv("JAMF_URL","").rstrip("/") # remove / from last if exist
 Client_id=os.getenv("JAMF_CLIENT_ID")
 Client_secret=os.getenv("JAMF_CLIENT_SECRET")
 
@@ -90,6 +90,7 @@ def Add_Categories(token,categories):
         "Accept":"application/json",
         "Content-type":"application/json"
     }
+
     for category in categories:
         try:
             response=requests.post(url,headers=headers,json=category)
@@ -99,6 +100,48 @@ def Add_Categories(token,categories):
             print(f"Error occured : {e}")
 
 # category delete methods
+def Delete_Categories(token,categories):
+#   {
+#   curl -X 'POST' \
+#   curl -X 'POST' \
+#   'https://jamftechnology.jamfcloud.com/api/v1/categories/delete-multiple' \
+#   -H 'accept: */*' \
+#   -H 'Authorization: Bearer {token}' \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#   "ids": [
+#     "35"
+#    ]
+#   }'
+
+    url=f"{Jamf_url}/api/v1/categories/delete-multiple"
+    headers={
+        "Authorization":f"Bearer {token}",
+        "Accept":"application/json",
+        "Content-type":"application/json"
+    }
+    
+    try:
+        print("Deleting the categories...")
+        category_ids = ["42", "40"]
+        response = requests.post(
+            url,
+            headers=headers,
+            json={"ids": category_ids}
+        )
+
+        print("Status:", response.status_code)
+        print("Response:", response.json())
+
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        print(f"HTTP Error: {e}")
+        print("Jamf response:", response.text)
+
+    except requests.exceptions.RequestException as e:
+        print(f"Request Error: {e}")
+
 
 
 
@@ -106,12 +149,12 @@ def Add_Categories(token,categories):
 if __name__ == "__main__":
     token=Get_jamf_token()
     if token:
-        categories_data=Get_categories(token)
+        # categories_data=Get_categories(token)
         # print(categories_data)
         # print(categories_data["totalCount"])
         # Add_Category(token,{"name": "New Category 5","priority": 8 })
         # categories=({"name": "New Category 6","priority": 7 },{"name": "New Category 10","priority": 9 })
         # Add_Categories(token,categories)
-
+        Delete_Categories(token,"hello")
         # Invalidate_token(token)
 
