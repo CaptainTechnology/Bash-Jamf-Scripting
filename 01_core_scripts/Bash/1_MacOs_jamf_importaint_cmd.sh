@@ -74,17 +74,17 @@ csrutil status                               # SIP (System Integrity Protection)
 # csrutil disable                            # Disable SIP (run in Recovery)
 
 sudo security list-keychains                 # List keychains
-security find-certificate -a -p /Library/Keychains/System.keychain  # Certs installed
+# security find-certificate -a -p /Library/Keychains/System.keychain  # Certs installed
 
 # TCC / Privacy Permissions Reset
 sudo tccutil reset SystemPolicyAllFiles      # Reset the system Full Disk Access preferences globally
 sudo tccutil reset All com.microsoft.VSCode  # Reset Full Disk Access for a specific app
-sudo tccutil reset All com.google.Chrome
+sudo tccutil reset All com.google.Chrome # com.brave.Browser
 
 # Firewall Control
-/usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on   # Turn Firewall On
-/usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate off  # Turn Firewall Off
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate # Get Firewall Status
+# /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on   # Turn Firewall On
+# /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate off  # Turn Firewall Off
+# sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate # Get Firewall Status
 
 # ==============================================================================
 # 4. SYSTEM, HARDWARE & DISK INFO
@@ -102,6 +102,7 @@ sw_vers                                      # macOS version / build quickly
 # hostname                                   # Full hostname
 
 diskutil list                                # List all disks/partitions
+diskutil eject /dev/disk4                    # Eject Disk
 diskutil info /                              # Info on boot volume (APFS container, etc.)
 diskutil apfs list                           # APFS containers and volumes
 diskutil info "Macintosh HD"                 # Macintosh HD details
